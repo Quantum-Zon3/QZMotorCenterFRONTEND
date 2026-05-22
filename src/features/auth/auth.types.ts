@@ -1,0 +1,25 @@
+export interface AuthUser {
+  cedula?: number;
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  telefono?: string;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  refreshToken?: string;
+  user: AuthUser | null;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken?: string;
+  usuario?: AuthUser | null;
+}
+
