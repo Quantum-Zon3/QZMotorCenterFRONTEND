@@ -5,8 +5,10 @@ import {
   MdElectricBike, MdElectricScooter, MdBarChart,
   MdSmartToy, MdAdd
 } from "react-icons/md";
+import { getResumenCatalogo } from "../features/electrobike/electrobike.api";
+import { useEffect, useState } from "react";
 
-const stats = [
+const baseStats = [
   { label: "Usuarios", value: "—", icon: <MdPeople />, color: "purple", sub: "Auth · Spring Boot" },
   { label: "Autos", value: "—", icon: <MdDirectionsCar />, color: "teal", sub: "Cars · Node + PostgreSQL" },
   { label: "Motos", value: "—", icon: <MdDirectionsBike />, color: "orange", sub: "Motorcycles · Flask" },
@@ -27,6 +29,20 @@ const quickActions = [
 export default function DashboardPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const [totalElectroBikes, setTotalElectroBikes] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadResumen = async () => {
+      try {
+        const resumen = await getResumenCatalogo();
+        setTotalElectroBikes(resumen.totalElectroBikes);
+      } catch (error) {
+        console.error("Error cargando resumen de Electrobikes:", error);
+      }
+    };
+
+    loadResumen();
+  }, []);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -36,6 +52,12 @@ export default function DashboardPage() {
   };
 
   const displayName = session?.user?.nombre ?? "Admin";
+
+  const stats = baseStats.map((stat) =>
+    stat.label === "Electrobikes"
+      ? { ...stat, value: totalElectroBikes ?? "—" }
+      : stat
+  );
 
   return (
     <div className="dashboard">
