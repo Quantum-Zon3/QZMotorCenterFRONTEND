@@ -46,9 +46,7 @@ export function AppRouter() {
       <Route
         path="/app"
         element={
-          <ProtectedRoute>
             <AppShell />
-          </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
