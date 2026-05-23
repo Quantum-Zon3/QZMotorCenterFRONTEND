@@ -9,7 +9,7 @@ export const env = {
   authApiUrl: readEnv("VITE_AUTH_API_URL", "http://localhost:8081"),
   carsApiUrl: readEnv("VITE_CARS_API_URL", "http://localhost:3001"),
   motorcyclesApiUrl: readEnv("VITE_MOTORCYCLES_API_URL", "http://localhost:5000"),
-  electroBikesApiUrl: readEnv("VITE_ELECTROBIKES_API_URL", "http://localhost:3002"),
+  electroBikesApiUrl: readEnv("VITE_ELECTROBIKES_API_URL", "https://qzmotorcenter-electrobike-api.onrender.com"),
   scootersApiUrl: readEnv("VITE_SCOOTERS_API_URL", "http://localhost:3003"),
   reportsApiUrl: readEnv("VITE_REPORTS_API_URL", "http://localhost:8080"),
   aiApiUrl: readEnv("VITE_AI_API_URL", "http://localhost:8000"),

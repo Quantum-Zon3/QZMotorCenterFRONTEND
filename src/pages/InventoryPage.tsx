@@ -1,142 +1,67 @@
-import { useEffect, useState } from "react";
-import PageHeader from "../components/ui/PageHeader";
-import ServiceBadge from "../components/ui/ServiceBadge";
-import { serviceRegistry } from "../config/service-registry";
-import {
-  fetchInventoryCollection,
-  type CatalogItem,
-  type InventoryServiceKey,
-} from "../features/catalog/catalog.api";
-import { getErrorMessage } from "../lib/http/get-error-message";
-import { formatCurrency } from "../lib/formatters";
+import { MdSearch } from "react-icons/md";
 
-interface InventoryPageProps {
+interface Props {
   heading: string;
   description: string;
-  serviceKey: InventoryServiceKey;
-  audience: "public" | "private";
+  serviceKey: string;
+  audience?: string;
 }
 
-export default function InventoryPage({
-  heading,
-  description,
-  serviceKey,
-  audience,
-}: InventoryPageProps) {
-  const [items, setItems] = useState<CatalogItem[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const emojiMap: Record<string, string> = {
+  cars: "🚗",
+  motorcycles: "🏍️",
+  electrobikes: "⚡",
+  scooters: "🛴",
+};
 
-  const service = serviceRegistry[serviceKey];
+const mockItems = [
+  { id: 1, name: "Modelo Alpha", sub: "2023 · Disponible", price: "$45.000.000" },
+  { id: 2, name: "Modelo Beta", sub: "2022 · Disponible", price: "$38.000.000" },
+  { id: 3, name: "Modelo Gamma", sub: "2024 · Próximamente", price: "$62.000.000" },
+  { id: 4, name: "Modelo Delta", sub: "2023 · Disponible", price: "$41.000.000" },
+];
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const snapshot = await fetchInventoryCollection(serviceKey);
-        setItems(snapshot.items);
-      } catch (requestError: unknown) {
-        setItems([]);
-        setError(
-          getErrorMessage(
-            requestError,
-            "No se pudo conectar con el microservicio todavía.",
-          ),
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-  }, [serviceKey]);
-
-  const term = search.trim().toLowerCase();
-  const filteredItems = !term
-    ? items
-    : items.filter((item) =>
-        [item.title, item.subtitle, item.badge, ...item.meta]
-          .join(" ")
-          .toLowerCase()
-          .includes(term),
-      );
+export default function InventoryPage({ heading, description, serviceKey }: Props) {
+  const emoji = emojiMap[serviceKey] ?? "🚗";
 
   return (
-    <div className="page-stack">
-      <section className="surface-card">
-        <PageHeader
-          eyebrow={audience === "public" ? "Catálogo público" : "Operación interna"}
-          title={heading}
-          description={description}
-        />
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem" }}>
+      {/* Header */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: "1.75rem", marginBottom: "0.4rem" }}>
+          {emoji} {heading}
+        </h1>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{description}</p>
+      </div>
 
-        <div className="chip-row">
-          <ServiceBadge value={service.label} />
-          <ServiceBadge value={service.stack} />
-          <ServiceBadge value={service.routeBase} />
-        </div>
+      {/* Search */}
+      <div className="search-bar" style={{ marginBottom: "1.75rem" }}>
+        <span className="search-bar-icon"><MdSearch /></span>
+        <input type="text" placeholder="Buscar en el catálogo..." />
+      </div>
 
-        <label className="field search-field">
-          <span>Buscar dentro del módulo</span>
-          <input
-            type="search"
-            placeholder="Busca por modelo, marca, color o placa"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
-
-        {error ? <div className="feedback warning">{error}</div> : null}
-
-        {loading ? (
-          <div className="screen-center compact">
-            <div className="loading-dot" />
-            <p>Cargando datos desde {service.label}...</p>
+      {/* Grid */}
+      <div className="catalog-grid">
+        {mockItems.map((item) => (
+          <div key={item.id} className="catalog-card">
+            <div style={{
+              height: 120,
+              borderRadius: "var(--radius-md)",
+              background: "linear-gradient(135deg, var(--bg-card-hover), var(--bg-secondary))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "3rem",
+              marginBottom: "1rem",
+            }}>
+              {emoji}
+            </div>
+            <h3 style={{ fontSize: "1rem" }}>{item.name}</h3>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "0.25rem 0 0.75rem" }}>{item.sub}</p>
+            <div style={{ fontWeight: 700, color: "var(--success)", fontSize: "1.1rem" }}>{item.price}</div>
           </div>
-        ) : (
-          <div className="catalog-grid">
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item) => (
-                <article key={item.id} className="vehicle-card">
-                  <div className="vehicle-media">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.title} />
-                    ) : (
-                      <div className="vehicle-placeholder">Sin imagen</div>
-                    )}
-                  </div>
-
-                  <div className="vehicle-body">
-                    <div className="chip-row">
-                      <ServiceBadge value={item.badge} />
-                      <ServiceBadge value={item.source} />
-                    </div>
-                    <h3>{item.title}</h3>
-                    <p>{item.subtitle}</p>
-                    <ul className="meta-list">
-                      {item.meta.map((meta) => (
-                        <li key={meta}>{meta}</li>
-                      ))}
-                    </ul>
-                    <strong>{formatCurrency(item.price)}</strong>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <article className="empty-panel">
-                <h3>Sin resultados todavía</h3>
-                <p>
-                  El módulo está listo, pero no recibió datos del servicio o el
-                  filtro actual no encontró coincidencias.
-                </p>
-              </article>
-            )}
-          </div>
-        )}
-      </section>
+        ))}
+      </div>
     </div>
   );
 }

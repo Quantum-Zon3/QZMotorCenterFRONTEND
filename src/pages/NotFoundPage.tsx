@@ -2,24 +2,15 @@ import { Link } from "react-router-dom";
 
 export default function NotFoundPage() {
   return (
-    <div className="screen-center">
-      <div className="surface-card compact-card">
-        <span className="eyebrow">404</span>
-        <h2>La ruta no existe todavía</h2>
-        <p>
-          Este frontend está en construcción por fases. Puedes volver al inicio o
-          entrar al panel.
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-primary)" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "5rem", marginBottom: "1rem" }}>🏍️</div>
+        <h1 style={{ fontSize: "4rem", fontWeight: 800, background: "linear-gradient(135deg, var(--text-white), var(--accent-light))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>404</h1>
+        <p style={{ color: "var(--text-secondary)", margin: "1rem 0 2rem", fontSize: "1rem" }}>
+          Esta ruta no existe en el sistema.
         </p>
-        <div className="hero-actions">
-          <Link className="btn btn-primary" to="/">
-            Volver al inicio
-          </Link>
-          <Link className="btn btn-secondary" to="/app/dashboard">
-            Ir al dashboard
-          </Link>
-        </div>
+        <Link to="/" className="btn btn-primary">Volver al inicio</Link>
       </div>
     </div>
   );
 }
-

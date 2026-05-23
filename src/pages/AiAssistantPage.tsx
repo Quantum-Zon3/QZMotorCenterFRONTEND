@@ -1,141 +1,112 @@
-import { useEffect, useState, type FormEvent } from "react";
-import PageHeader from "../components/ui/PageHeader";
-import ServiceBadge from "../components/ui/ServiceBadge";
-import { serviceRegistry } from "../config/service-registry";
-import { aiClient } from "../lib/http/clients";
-import { clampText } from "../lib/formatters";
+import { useState } from "react";
+import { MdSend, MdAdd, MdSmartToy } from "react-icons/md";
 
-interface ConversationRecord {
-  id: string;
-  title?: string;
-  messages?: Array<{ role?: string; content?: string }>;
+interface Message {
+  role: "assistant" | "user";
+  text: string;
 }
 
+const mockConversations = [
+  { id: 1, title: "Consulta de inventario", date: "Hoy" },
+  { id: 2, title: "Análisis de ventas Q1", date: "Ayer" },
+  { id: 3, title: "Recomendación de scooter", date: "Hace 2 días" },
+];
+
 export default function AiAssistantPage() {
-  const [conversations, setConversations] = useState<ConversationRecord[]>([]);
-  const [title, setTitle] = useState("Exploración comercial");
-  const [prompt, setPrompt] = useState(
-    "Resume el estado general de los catálogos conectados al frontend.",
-  );
-  const [responsePreview, setResponsePreview] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState("");
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", text: "¡Hola! Soy el asistente IA de QZ Motor Center. Puedo ayudarte con consultas sobre inventario, estadísticas, recomendaciones de vehículos y más. ¿En qué puedo ayudarte hoy?" },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const loadConversations = async () => {
-      try {
-        const { data } = await aiClient.get<ConversationRecord[]>(
-          "/api/v1/conversations",
-        );
-        setConversations(Array.isArray(data) ? data : []);
-      } catch {
-        setError(
-          "No se pudo consultar el historial del agente. La pantalla queda lista para cuando IA esté disponible.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadConversations();
-  }, []);
-
-  const runAgent = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setRunning(true);
-    setResponsePreview("");
-    setError("");
-
-    try {
-      const { data } = await aiClient.post("/api/v1/agent/run", {
-        title,
-        prompt,
-      });
-      setResponsePreview(JSON.stringify(data, null, 2));
-    } catch {
-      setError(
-        "La ejecución del agente falló. Puede ser por el proveedor LLM, la base de datos o porque el servicio no está arriba.",
-      );
-    } finally {
-      setRunning(false);
-    }
+  const handleSend = () => {
+    if (!input.trim()) return;
+    setMessages((prev) => [...prev, { role: "user", text: input }]);
+    setInput("");
+    setLoading(true);
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "Entendido. Esta funcionalidad estará disponible una vez conectado el microservicio IA (FastAPI + PostgreSQL). Por ahora estoy en modo de demostración visual." },
+      ]);
+      setLoading(false);
+    }, 1200);
   };
 
   return (
-    <div className="page-stack">
-      <section className="surface-card">
-        <PageHeader
-          eyebrow="Asistencia"
-          title="Módulo de IA"
-          description="Este espacio ya contempla historial de conversaciones y una primera interacción con /api/v1/agent/run."
-        />
-
-        <div className="chip-row">
-          <ServiceBadge value={serviceRegistry.ai.stack} />
-          <ServiceBadge value="/api/v1/conversations" />
-          <ServiceBadge value="/api/v1/agent/run" />
+    <div className="animate-fade-in">
+      <div className="page-header">
+        <div>
+          <h1>Asistente IA</h1>
+          <p>Consultas inteligentes — microservicio IA · FastAPI + PostgreSQL</p>
         </div>
+        <button className="btn btn-secondary">
+          <MdAdd /> Nueva conversación
+        </button>
+      </div>
 
-        <div className="two-column">
-          <form className="surface-subcard form-stack" onSubmit={runAgent}>
-            <label className="field">
-              <span>Título de conversación</span>
-              <input value={title} onChange={(event) => setTitle(event.target.value)} />
-            </label>
-
-            <label className="field">
-              <span>Prompt inicial</span>
-              <textarea
-                rows={6}
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-              />
-            </label>
-
-            <button className="btn btn-primary" type="submit" disabled={running}>
-              {running ? "Ejecutando..." : "Probar agente"}
-            </button>
-
-            {error ? <div className="feedback warning">{error}</div> : null}
-            {responsePreview ? (
-              <pre className="response-box">{responsePreview}</pre>
-            ) : null}
-          </form>
-
-          <div className="surface-subcard">
-            <h3>Conversaciones detectadas</h3>
-            {loading ? (
-              <div className="screen-center compact">
-                <div className="loading-dot" />
-                <p>Cargando historial...</p>
+      <div className="ai-layout">
+        {/* Conversations sidebar */}
+        <div className="ai-sidebar-panel">
+          <div style={{ padding: "1rem", borderBottom: "1px solid var(--border)", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Conversaciones
+          </div>
+          <div style={{ overflowY: "auto", flex: 1 }}>
+            {mockConversations.map((c) => (
+              <div key={c.id} style={{ padding: "0.85rem 1rem", borderBottom: "1px solid var(--border)", cursor: "pointer", transition: "background var(--transition-fast)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text-primary)" }}>{c.title}</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>{c.date}</div>
               </div>
-            ) : conversations.length > 0 ? (
-              <div className="stack-list">
-                {conversations.map((conversation) => (
-                  <article key={conversation.id} className="list-card">
-                    <strong>{conversation.title ?? "Sin título"}</strong>
-                    <p>
-                      {clampText(
-                        conversation.messages?.[0]?.content ??
-                          "Sin mensajes iniciales todavía.",
-                      )}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <article className="empty-panel">
-                <h3>Aún no hay historial visible</h3>
-                <p>
-                  La vista está lista para mostrar conversaciones apenas el
-                  servicio de IA responda.
-                </p>
-              </article>
-            )}
+            ))}
           </div>
         </div>
-      </section>
+
+        {/* Chat panel */}
+        <div className="ai-chat-panel">
+          <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), var(--accent-dark))", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "1rem" }}>
+              <MdSmartToy />
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>QZ Assistant</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--success)" }}>● En línea</div>
+            </div>
+          </div>
+
+          <div className="ai-messages">
+            {messages.map((m, i) => (
+              <div key={i} className={`ai-message ${m.role}`}>
+                <div className="ai-message-avatar">
+                  {m.role === "assistant" ? "🤖" : "U"}
+                </div>
+                <div className="ai-message-bubble">{m.text}</div>
+              </div>
+            ))}
+            {loading && (
+              <div className="ai-message assistant">
+                <div className="ai-message-avatar">🤖</div>
+                <div className="ai-message-bubble" style={{ color: "var(--text-muted)" }}>Escribiendo...</div>
+              </div>
+            )}
+          </div>
+
+          <div className="ai-input-area">
+            <input
+              type="text"
+              placeholder="Escribe tu consulta aquí..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            />
+            <button className="btn btn-primary" onClick={handleSend} disabled={loading || !input.trim()}>
+              <MdSend />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,18 +1,38 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/useAuth";
+import {
+  MdDashboard, MdPeople, MdDirectionsCar, MdDirectionsBike,
+  MdElectricBike, MdElectricScooter, MdBarChart, MdSmartToy,
+  MdSettings, MdLogout, MdPerson, MdMenu, MdClose
+} from "react-icons/md";
 
-const navigation = [
-  { label: "Dashboard", to: "/app/dashboard" },
-  { label: "Usuarios", to: "/app/usuarios" },
-  { label: "Autos", to: "/app/inventario/autos" },
-  { label: "Motos", to: "/app/inventario/motos" },
-  { label: "Electrobikes", to: "/app/inventario/electrobikes" },
-  { label: "Scooters", to: "/app/inventario/scooters" },
-  { label: "Reportes", to: "/app/reportes" },
-  { label: "IA", to: "/app/ia" },
-  { label: "Arquitectura", to: "/app/arquitectura" },
-  { label: "Configuración", to: "/app/configuracion" },
+const navSections = [
+  {
+    title: "Principal",
+    items: [
+      { label: "Dashboard", to: "/app/dashboard", icon: <MdDashboard /> },
+      { label: "Mi Perfil", to: "/app/perfil", icon: <MdPerson /> },
+    ],
+  },
+  {
+    title: "Inventario",
+    items: [
+      { label: "Usuarios", to: "/app/usuarios", icon: <MdPeople /> },
+      { label: "Autos", to: "/app/inventario/autos", icon: <MdDirectionsCar /> },
+      { label: "Motos", to: "/app/inventario/motos", icon: <MdDirectionsBike /> },
+      { label: "Electrobikes", to: "/app/inventario/electrobikes", icon: <MdElectricBike /> },
+      { label: "Scooters", to: "/app/inventario/scooters", icon: <MdElectricScooter /> },
+    ],
+  },
+  {
+    title: "Herramientas",
+    items: [
+      { label: "Reportes", to: "/app/reportes", icon: <MdBarChart /> },
+      { label: "Asistente IA", to: "/app/ia", icon: <MdSmartToy /> },
+      { label: "Configuración", to: "/app/configuracion", icon: <MdSettings /> },
+    ],
+  },
 ];
 
 export default function AppShell() {
@@ -25,60 +45,96 @@ export default function AppShell() {
     navigate("/login");
   };
 
+  const userName = session?.user?.nombre
+    ? `${session.user.nombre} ${session.user.apellido ?? ""}`.trim()
+    : session?.user?.email ?? "Usuario";
+
+  const userInitial = userName.charAt(0).toUpperCase();
+  const userRole = (session?.user as { role?: string })?.role ?? "Operador";
+
   return (
-    <div className="app-shell">
+    <div className="app-layout">
+      {/* Sidebar */}
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <div className="sidebar-brand">
-          <img src="/logo-mark.svg" alt="QZ Motor Center" className="brand-mark small" />
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">🏍️</div>
           <div>
-            <strong>QZ Control Room</strong>
-            <span>Backoffice modular</span>
+            <h1>QZ Motor</h1>
+            <span>Centro de Gestión</span>
           </div>
         </div>
 
+        {/* Navigation */}
         <nav className="sidebar-nav">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                isActive ? "sidebar-link active" : "sidebar-link"
-              }
-              onClick={() => setMenuOpen(false)}
-            >
-              {item.label}
-            </NavLink>
+          {navSections.map((section) => (
+            <div key={section.title}>
+              <span className="sidebar-section-title">{section.title}</span>
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `sidebar-link ${isActive ? "active" : ""}`
+                  }
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span className="sidebar-link-icon">{item.icon}</span>
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
-        <div className="sidebar-user">
-          <strong>
-            {session?.user?.nombre
-              ? `${session.user.nombre} ${session.user.apellido ?? ""}`.trim()
-              : session?.user?.email ?? "Sin sesión activa"}
-          </strong>
-          <span>{session?.user?.telefono ?? "Operador del sistema"}</span>
-          <button className="btn btn-secondary full-width" onClick={handleLogout}>
-            Cerrar sesión
+        {/* Footer */}
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{userInitial}</div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{userName}</div>
+              <div className="sidebar-user-role">{userRole}</div>
+            </div>
+          </div>
+          <button className="sidebar-logout" onClick={handleLogout}>
+            <MdLogout /> Cerrar Sesión
           </button>
         </div>
       </aside>
 
-      <div className="app-content-shell">
+      {/* Content */}
+      <div className="app-content">
+        {/* Mobile topbar */}
         <header className="app-topbar">
-          <button className="menu-toggle" onClick={() => setMenuOpen((current) => !current)}>
-            Menú
+          <button
+            className="menu-toggle"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Menú"
+          >
+            {menuOpen ? <MdClose /> : <MdMenu />}
           </button>
-          <div>
-            <span className="eyebrow">Operación interna</span>
-            <h1>Panel base del frontend</h1>
-          </div>
+          <span style={{ fontWeight: 600, fontSize: "1rem", color: "var(--text-white)" }}>
+            QZ Motor Center
+          </span>
         </header>
 
         <main className="app-main">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile overlay */}
+      {menuOpen && (
+        <div
+          onClick={() => setMenuOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            zIndex: 150,
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,81 +1,79 @@
-import { useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import PageHeader from "../components/ui/PageHeader";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../features/auth/useAuth";
-import { getErrorMessage } from "../lib/http/get-error-message";
+import { MdPerson, MdLock } from "react-icons/md";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const redirectTarget =
-    (location.state as { from?: string } | null)?.from ?? "/app/dashboard";
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError("");
-    setIsSubmitting(true);
-
+    setLoading(true);
     try {
-      await login({ email, password });
-      navigate(redirectTarget, { replace: true });
-    } catch (requestError: unknown) {
-      setError(
-        getErrorMessage(
-          requestError,
-          "No fue posible iniciar sesión con el microservicio Auth.",
-        ),
-      );
+      await login({
+        email, password
+      });
+      navigate("/app/dashboard");
+    } catch {
+      setError("Credenciales inválidas. Verifica tu usuario y contraseña.");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <PageHeader
-          eyebrow="Acceso interno"
-          title="Conecta el frontend con Auth"
-          description="Esta pantalla ya apunta al endpoint real /qzwork_hub/auth/login y deja lista la persistencia de sesión."
-        />
+    <div className="login-page">
+      <div className="login-card">
+        {/* Header */}
+        <div className="login-header">
+          <div className="login-logo">🏍️</div>
+          <h1>QZ Motor Center</h1>
+          <p>Inicia sesión para continuar</p>
+        </div>
 
-        <form className="form-stack" onSubmit={handleSubmit}>
-          <label className="field">
-            <span>Correo</span>
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          {error && <div className="login-error">{error}</div>}
+
+          <div className="login-input-group">
+            <span className="input-icon"><MdPerson /></span>
             <input
               type="email"
-              placeholder="operador@qzmotorcenter.com"
+              placeholder="Correo electrónico"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="username"
+              onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="username"
             />
-          </label>
+          </div>
 
-          <label className="field">
-            <span>Contraseña</span>
+          <div className="login-input-group">
+            <span className="input-icon"><MdLock /></span>
             <input
               type="password"
-              placeholder="Tu contraseña"
+              placeholder="Contraseña"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
+              onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
-          </label>
+          </div>
 
-          {error ? <div className="feedback error">{error}</div> : null}
-
-          <button type="submit" className="btn btn-primary full-width" disabled={isSubmitting}>
-            {isSubmitting ? "Ingresando..." : "Entrar al panel"}
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </button>
         </form>
+
+        <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
+          ¿Problemas para acceder?{" "}
+          <Link to="/" style={{ color: "var(--accent-light)" }}>Volver al inicio</Link>
+        </p>
       </div>
     </div>
   );
