@@ -7,6 +7,7 @@ import {
   updateElectroBike,
   deleteElectroBike,
   getResumenCatalogo,
+  createMarca,
 } from "../features/electrobike/electrobike.api";
 import type {
   ElectroBike,
@@ -61,11 +62,18 @@ export default function ElectroBikesPage() {
   const [coldStart, setColdStart]     = useState(false);   // aviso Render
   const [search, setSearch]           = useState("");
   const [showModal, setShowModal]     = useState(false);
+  const [showBrandModal, setShowBrandModal] = useState(false);
   const [editTarget, setEditTarget]   = useState<ElectroBike | null>(null);
   const [submitting, setSubmitting]   = useState(false);
+  const [brandSubmitting, setBrandSubmitting] = useState(false);
   const [pageError, setPageError]     = useState("");
   const [formError, setFormError]     = useState("");
+  const [brandError, setBrandError]   = useState("");
   const [form, setForm]               = useState<CrearElectroBikeInput>(EMPTY_FORM);
+  const [brandForm, setBrandForm]     = useState({ nombre: "", pais: "" });
+  const [isCreatingMarca, setIsCreatingMarca] = useState(false);
+  const [newMarcaNombre, setNewMarcaNombre] = useState("");
+  const [newMarcaPais, setNewMarcaPais] = useState("");
 
   useEffect(() => { void loadAll(); }, []);
 
@@ -110,7 +118,21 @@ export default function ElectroBikesPage() {
     setEditTarget(null);
     setForm(EMPTY_FORM);
     setFormError("");
+    setIsCreatingMarca(false);
+    setNewMarcaNombre("");
+    setNewMarcaPais("");
     setShowModal(true);
+  };
+
+  const openBrandModal = () => {
+    setBrandError("");
+    setBrandForm({ nombre: "", pais: "" });
+    setShowBrandModal(true);
+  };
+
+  const closeBrandModal = () => {
+    setShowBrandModal(false);
+    setBrandError("");
   };
 
   const openEdit = (bike: ElectroBike) => {
@@ -129,6 +151,9 @@ export default function ElectroBikesPage() {
       fotoUrl:            bike.fotoUrl,
     });
     setFormError("");
+    setIsCreatingMarca(false);
+    setNewMarcaNombre("");
+    setNewMarcaPais("");
     setShowModal(true);
   };
 
@@ -136,6 +161,31 @@ export default function ElectroBikesPage() {
     setShowModal(false);
     setEditTarget(null);
     setFormError("");
+  };
+
+  const handleBrandChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setBrandForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateMarca = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBrandSubmitting(true);
+    setBrandError("");
+
+    try {
+      const createdMarca = await createMarca({
+        nombre: brandForm.nombre.trim(),
+        pais: brandForm.pais.trim(),
+      });
+      setMarcas((prev) => [...prev, createdMarca]);
+      closeBrandModal();
+      await loadAll();
+    } catch (err) {
+      setBrandError(getErrorMessage(err, "No se pudo crear la marca."));
+    } finally {
+      setBrandSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -158,12 +208,26 @@ export default function ElectroBikesPage() {
       if (editTarget) {
         await updateElectroBike(editTarget.id, form);
       } else {
-        const newBike = await createElectroBike(form);
+        let bikePayload = form;
+        if (isCreatingMarca) {
+          const createdMarca = await createMarca({
+            nombre: newMarcaNombre.trim(),
+            pais: newMarcaPais.trim() || "Desconocido",
+          });
+          setMarcas((prev) => [...prev, createdMarca]);
+          bikePayload = {
+            ...form,
+            marcaId: createdMarca.id,
+          };
+          setForm((prev) => ({ ...prev, marcaId: createdMarca.id }));
+        }
+
+        const newBike = await createElectroBike(bikePayload);
         
         // Generar un reporte 200 OK en el microservicio de reportes
         try {
-          const selectedMarca = marcas.find((m) => m.id === form.marcaId);
-          const brandName = selectedMarca ? selectedMarca.nombre : "ElectroBike";
+          const selectedMarca = marcas.find((m) => m.id === bikePayload.marcaId) ?? { nombre: newMarcaNombre || "ElectroBike" };
+          const brandName = selectedMarca.nombre || "ElectroBike";
           const reportPayload = {
             items: [
               {
@@ -251,6 +315,9 @@ export default function ElectroBikesPage() {
         <div className="page-header-actions">
           <button className="btn btn-secondary" onClick={loadAll} title="Recargar datos">
             <MdRefresh />
+          </button>
+          <button className="btn btn-secondary" onClick={openBrandModal} title="Agregar marca">
+            <MdAdd /> Nueva Marca
           </button>
           <button className="btn btn-primary" onClick={openCreate}>
             <MdAdd /> Nueva Electrobike
@@ -438,16 +505,35 @@ export default function ElectroBikesPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="form-row">
-                <div className="form-group">
+                <div className="form-group" style={{ flex: 1 }}>
                   <label htmlFor="marcaId">Marca *</label>
-                  <select id="marcaId" name="marcaId" value={form.marcaId} onChange={handleChange} required>
-                    <option value={0} disabled>
-                      {marcas.length === 0 ? "No hay marcas — créalas primero" : "Selecciona una marca"}
-                    </option>
-                    {marcas.map((m) => (
-                      <option key={m.id} value={m.id}>{m.nombre} ({m.pais})</option>
-                    ))}
-                  </select>
+                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                    <select id="marcaId" name="marcaId" value={form.marcaId} onChange={handleChange} required={!isCreatingMarca} disabled={isCreatingMarca}>
+                      <option value={0} disabled>
+                        {marcas.length === 0 ? "No hay marcas — créalas primero" : "Selecciona una marca"}
+                      </option>
+                      {marcas.map((m) => (
+                        <option key={m.id} value={m.id}>{m.nombre} ({m.pais})</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setIsCreatingMarca((prev) => !prev);
+                        setNewMarcaNombre("");
+                        setNewMarcaPais("");
+                      }}
+                      style={{ whiteSpace: "nowrap" }}
+                    >
+                      {isCreatingMarca ? "Usar existente" : "Agregar marca"}
+                    </button>
+                  </div>
+                  {marcas.length === 0 && !isCreatingMarca && (
+                    <small style={{ display: "block", marginTop: "0.5rem", color: "var(--muted)" }}>
+                      No hay marcas registradas. Puedes crear una marca desde aquí o usar el botón "Nueva Marca".
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label htmlFor="modelo">Modelo *</label>
@@ -455,6 +541,32 @@ export default function ElectroBikesPage() {
                 </div>
               </div>
 
+              {isCreatingMarca && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="newMarcaNombre">Nombre marca *</label>
+                    <input
+                      id="newMarcaNombre"
+                      name="newMarcaNombre"
+                      value={newMarcaNombre}
+                      onChange={(e) => setNewMarcaNombre(e.target.value)}
+                      placeholder="Ej: Thunder Bikes"
+                      required={isCreatingMarca}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="newMarcaPais">País *</label>
+                    <input
+                      id="newMarcaPais"
+                      name="newMarcaPais"
+                      value={newMarcaPais}
+                      onChange={(e) => setNewMarcaPais(e.target.value)}
+                      placeholder="Ej: Colombia"
+                      required={isCreatingMarca}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="categoria">Categoría *</label>
@@ -516,8 +628,66 @@ export default function ElectroBikesPage() {
                 <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={submitting}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting || (marcas.length === 0 && !editTarget)}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={
+                    submitting ||
+                    (!editTarget && !isCreatingMarca && marcas.length === 0) ||
+                    (isCreatingMarca && (!newMarcaNombre.trim() || !newMarcaPais.trim()))
+                  }
+                >
                   {submitting ? "Guardando..." : editTarget ? "Guardar cambios" : "Crear Electrobike"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showBrandModal && (
+        <div className="modal-overlay" onClick={closeBrandModal}>
+          <div className="modal" style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Nueva Marca</h2>
+              <button className="btn-icon" onClick={closeBrandModal} title="Cerrar" aria-label="Cerrar modal"><MdClose /></button>
+            </div>
+            {brandError && (
+              <div className="login-error" style={{ marginBottom: "1rem" }}>{brandError}</div>
+            )}
+            <form onSubmit={handleCreateMarca}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="brandNombre">Nombre de la marca *</label>
+                  <input
+                    id="brandNombre"
+                    name="nombre"
+                    value={brandForm.nombre}
+                    onChange={handleBrandChange}
+                    placeholder="Ej: Thunder Bikes"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="brandPais">País *</label>
+                  <input
+                    id="brandPais"
+                    name="pais"
+                    value={brandForm.pais}
+                    onChange={handleBrandChange}
+                    placeholder="Ej: Colombia"
+                    required
+                  />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1.5rem" }}>
+                <button type="button" className="btn btn-secondary" onClick={closeBrandModal} disabled={brandSubmitting}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={brandSubmitting}>
+                  {brandSubmitting ? "Guardando..." : "Crear Marca"}
                 </button>
               </div>
             </form>
