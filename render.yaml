@@ -5,4 +5,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeploy: true
-
+    envVars:
+      - key: VITE_APP_NAME
+        value: QZ Motor Center
+      - key: VITE_API_GATEWAY_URL
+        value: https://qz-gateway.onrender.com

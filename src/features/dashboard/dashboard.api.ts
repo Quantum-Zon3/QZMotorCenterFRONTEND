@@ -1,6 +1,7 @@
 import { serviceList, serviceRegistry, type ServiceKey } from "../../config/service-registry";
 import { aiClient, electroBikesClient, reportsClient } from "../../lib/http/clients";
 import { fetchInventoryCounts } from "../catalog/catalog.api";
+import type { GetReportsResponse } from "../reports/reports.api";
 
 export interface DashboardMetric {
   label: string;
@@ -73,7 +74,7 @@ export const loadDashboardOverview = async (): Promise<DashboardOverview> => {
 
   const [reportsResult, conversationsResult, electrobikeSummaryResult, healthChecks] =
     await Promise.all([
-      reportsClient.get<Array<Record<string, unknown>>>("/api/reports").catch(() => null),
+      reportsClient.get<GetReportsResponse>("/api/reports").catch(() => null),
       aiClient
         .get<Array<Record<string, unknown>>>("/api/v1/conversations")
         .catch(() => null),
@@ -103,7 +104,7 @@ export const loadDashboardOverview = async (): Promise<DashboardOverview> => {
       },
       {
         label: "Reportes leídos",
-        value: reportsResult?.data?.length ?? 0,
+        value: reportsResult?.data?.total ?? 0,
         detail: "Consulta inicial al microservicio de reportes.",
       },
       {
@@ -120,4 +121,3 @@ export const loadDashboardOverview = async (): Promise<DashboardOverview> => {
     serviceHealth: healthChecks,
   };
 };
-

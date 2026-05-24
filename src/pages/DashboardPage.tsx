@@ -146,7 +146,7 @@ export default function DashboardPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {reports.slice(0, 5).map((report) => {
-              const eventType = report.eventType ?? "general";
+              const eventType = report.status === "cancelled" ? "delete" : "sale";
               const eventLabel =
                 eventType === "delete" ? "ELIMINADO" :
                 eventType === "sale" ? "VENTA" :

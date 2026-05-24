@@ -20,6 +20,7 @@ import { CATEGORIAS_ELECTROBIKE, ESTADOS_ELECTROBIKE } from "../features/electro
 import { formatCurrency } from "../lib/formatters";
 import { createReport200OK, createReportDeleted } from "../features/reports/reports.api";
 import { getErrorMessage } from "../lib/http/get-error-message";
+import { env } from "../config/env";
 
 const EMPTY_FORM: CrearElectroBikeInput = {
   marcaId: 0,
@@ -303,12 +304,12 @@ export default function ElectroBikesPage() {
           <p>
             Inventario de bicicletas eléctricas ·{" "}
             <a
-              href="https://qzmotorcenter-electrobike-api.onrender.com/api/health"
+              href={`${env.apiGatewayUrl}/health/electrobikes`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "var(--accent-light)", fontSize: "0.8rem" }}
             >
-              qzmotorcenter-electrobike-api.onrender.com
+              API Gateway /health/electrobikes
             </a>
           </p>
         </div>

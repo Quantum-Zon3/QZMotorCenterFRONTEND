@@ -17,9 +17,18 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface RegisterPayload {
+  cedula: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  contraseña: string;
+  telefono: string;
+  fechaRegistro: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken?: string;
   usuario?: AuthUser | null;
 }
-

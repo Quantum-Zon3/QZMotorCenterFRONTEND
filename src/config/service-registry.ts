@@ -31,8 +31,8 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "private",
     description:
       "Gestión de autenticación, sesión, login, refresh token y consulta de usuarios.",
-    baseUrl: env.authApiUrl,
-    routeBase: "/qzwork_hub/auth",
+    baseUrl: env.apiGatewayUrl,
+    routeBase: "/auth",
     tab: "Usuarios",
     stack: "Spring Boot + JWT + MySQL",
   },
@@ -43,7 +43,7 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "hybrid",
     description:
       "Inventario de carros con imágenes, precio, placa, modelo y trazabilidad por empleado.",
-    baseUrl: env.carsApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/cars",
     tab: "Autos",
     stack: "Node + Express + TypeScript + PostgreSQL",
@@ -55,7 +55,7 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "hybrid",
     description:
       "CRUD de motocicletas con placa como identificador y enfoque simple orientado a catálogo.",
-    baseUrl: env.motorcyclesApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/motorcycles",
     tab: "Motos",
     stack: "Flask + SQLAlchemy + MySQL",
@@ -67,9 +67,9 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "hybrid",
     description:
       "Catálogo eléctrico con marcas, filtros, stock, autonomía y endpoint de resumen.",
-    baseUrl: env.electroBikesApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/electrobikes",
-    healthPath: "/api/health",
+    healthPath: "/health/electrobikes",
     tab: "Electrobikes",
     stack: "Node + Express + TypeScript + Sequelize",
   },
@@ -80,7 +80,7 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "hybrid",
     description:
       "Microservicio de scooters eléctricas con datos de autonomía, voltaje y precio.",
-    baseUrl: env.scootersApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/scooters",
     tab: "Scooters",
     stack: "Node + Express + TypeScript + MySQL",
@@ -92,9 +92,9 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "private",
     description:
       "Servicio de reportes de ventas por producto, cliente y periodos sobre MongoDB.",
-    baseUrl: env.reportsApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/reports",
-    healthPath: "/health",
+    healthPath: "/health/reports",
     tab: "Reportes",
     stack: "Node + Express + MongoDB",
   },
@@ -105,9 +105,9 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "private",
     description:
       "Agente conversacional con persistencia de conversaciones y proveedor LLM configurable.",
-    baseUrl: env.aiApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/v1",
-    healthPath: "/health",
+    healthPath: "/health/ai",
     tab: "IA",
     stack: "FastAPI + PostgreSQL + SQLAlchemy",
   },
@@ -118,7 +118,7 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     audience: "private",
     description:
       "Funciones de automatización, hoy enfocadas en envío de correos transaccionales.",
-    baseUrl: env.serverlessApiUrl,
+    baseUrl: env.apiGatewayUrl,
     routeBase: "/api/enviarCorreo",
     tab: "Automatizaciones",
     stack: "Node + SendGrid + MongoDB helpers",
@@ -196,4 +196,3 @@ export const appSections = [
     detail: "Mapa de entornos, URLs por servicio y checklist de despliegue.",
   },
 ];
-

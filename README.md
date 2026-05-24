@@ -55,18 +55,15 @@ Frontend base de `QZ Motor Center` construido con `React`, `Vite` y `TypeScript`
 - `/app/configuracion`
   Variables, checklist de despliegue y mapa de entornos.
 
-## Microservicios contemplados
+## API Gateway
 
-| Dominio | Base actual esperada | Endpoint base |
-|---|---|---|
-| Auth | `VITE_AUTH_API_URL` | `/qzwork_hub/auth` |
-| Cars | `VITE_CARS_API_URL` | `/api/cars` |
-| Motorcycles | `VITE_MOTORCYCLES_API_URL` | `/api/motorcycles` |
-| ElectroBike | `VITE_ELECTROBIKES_API_URL` | `/api/electrobikes` |
-| Scooter | `VITE_SCOOTERS_API_URL` | `/api/scooters` |
-| Reports | `VITE_REPORTS_API_URL` | `/api/reports` |
-| IA | `VITE_AI_API_URL` | `/api/v1` |
-| Serverless | `VITE_SERVERLESS_API_URL` | `/api/enviarCorreo` |
+El frontend consume una sola base URL:
+
+| Variable | Valor por defecto |
+|---|---|
+| `VITE_API_GATEWAY_URL` | `https://qz-gateway.onrender.com` |
+
+Las URLs de Auth, motos, electrobikes, reports y demas microservicios se configuran solo en el API Gateway.
 
 ## Variables de entorno
 
@@ -115,4 +112,3 @@ Referencias oficiales consultadas:
 3. Completar CRUD por dominio de inventario.
 4. Diseñar reportes, IA y automatizaciones.
 5. Endurecer despliegue, QA y publicación.
-

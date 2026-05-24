@@ -669,6 +669,10 @@ tbody tr:last-child td {
   animation: slideUp 0.4s ease;
 }
 
+.register-card {
+  max-width: 560px;
+}
+
 .login-header {
   text-align: center;
   margin-bottom: 2rem;
@@ -757,6 +761,22 @@ tbody tr:last-child td {
   border-radius: var(--radius-md);
   font-size: 0.85rem;
   margin-bottom: 1rem;
+}
+
+.login-success {
+  background: var(--success-bg);
+  border: 1px solid rgba(0, 206, 201, 0.22);
+  color: var(--success);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.auth-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 
 /* ===== PUBLIC LAYOUT ===== */
@@ -1616,6 +1636,11 @@ tbody tr:last-child td {
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .auth-form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
   .hero {
