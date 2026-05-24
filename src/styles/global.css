@@ -1626,3 +1626,15 @@ tbody tr:last-child td {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Custom premium hover effects for dashboard reports */
+.report-item-hover {
+  transition: all var(--transition-fast) !important;
+}
+
+.report-item-hover:hover {
+  border-color: var(--accent-glow) !important;
+  background: var(--bg-card-hover) !important;
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}

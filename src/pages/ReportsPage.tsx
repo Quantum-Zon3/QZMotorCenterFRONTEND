@@ -1,11 +1,6 @@
+import { useEffect, useState } from "react";
 import { MdBarChart, MdTrendingUp, MdAttachMoney, MdInventory } from "react-icons/md";
-
-const summaryCards = [
-  { label: "Ventas del mes", value: "$142M", icon: <MdAttachMoney />, color: "teal", change: "+12% vs mes anterior" },
-  { label: "Vehículos vendidos", value: "38", icon: <MdInventory />, color: "purple", change: "+5 este mes" },
-  { label: "Ingreso promedio", value: "$3.7M", icon: <MdTrendingUp />, color: "orange", change: "por vehículo" },
-  { label: "Total reportes", value: "156", icon: <MdBarChart />, color: "blue", change: "generados este año" },
-];
+import { getAllReports } from "../features/reports/reports.api";
 
 const chartPlaceholders = [
   { title: "Ventas por categoría", desc: "Autos · Motos · Electrobikes · Scooters" },
@@ -15,6 +10,27 @@ const chartPlaceholders = [
 ];
 
 export default function ReportsPage() {
+  const [reportsTotal, setReportsTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        const response = await getAllReports();
+        setReportsTotal(response.total);
+      } catch (error) {
+        console.error("Error cargando total de reportes:", error);
+      }
+    };
+
+    loadReports();
+  }, []);
+
+  const summaryCards = [
+    { label: "Ventas del mes", value: "$142M", icon: <MdAttachMoney />, color: "teal", change: "+12% vs mes anterior" },
+    { label: "Vehículos vendidos", value: "38", icon: <MdInventory />, color: "purple", change: "+5 este mes" },
+    { label: "Ingreso promedio", value: "$3.7M", icon: <MdTrendingUp />, color: "orange", change: "por vehículo" },
+    { label: "Total reportes", value: reportsTotal !== null ? String(reportsTotal) : "...", icon: <MdBarChart />, color: "blue", change: "generados este año" },
+  ];
   return (
     <div className="animate-fade-in">
       <div className="page-header">

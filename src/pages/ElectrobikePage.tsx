@@ -17,6 +17,7 @@ import type {
 } from "../features/electrobike/electrobike.type";
 import { CATEGORIAS_ELECTROBIKE, ESTADOS_ELECTROBIKE } from "../features/electrobike/electrobike.type";
 import { formatCurrency } from "../lib/formatters";
+import { createReport200OK, createReportDeleted } from "../features/reports/reports.api";
 import { getErrorMessage } from "../lib/http/get-error-message";
 
 const EMPTY_FORM: CrearElectroBikeInput = {
@@ -157,7 +158,31 @@ export default function ElectroBikesPage() {
       if (editTarget) {
         await updateElectroBike(editTarget.id, form);
       } else {
-        await createElectroBike(form);
+        const newBike = await createElectroBike(form);
+        
+        // Generar un reporte 200 OK en el microservicio de reportes
+        try {
+          const selectedMarca = marcas.find((m) => m.id === form.marcaId);
+          const brandName = selectedMarca ? selectedMarca.nombre : "ElectroBike";
+          const reportPayload = {
+            items: [
+              {
+                productId: String(newBike.id),
+                productType: "electrobike",
+                productName: `${brandName} ${newBike.modelo}`,
+                unitPrice: Number(newBike.precio),
+                subtotal: Number(newBike.precio),
+              }
+            ],
+            totalAmount: Number(newBike.precio),
+            saleDate: new Date().toISOString()
+          };
+          console.debug("[reports] sending createReport200OK", reportPayload);
+
+          await createReport200OK(reportPayload);
+        } catch (reportErr) {
+          console.error("No se pudo generar el reporte 200 OK:", reportErr);
+        }
       }
       closeModal();
       await loadAll();
@@ -173,6 +198,32 @@ export default function ElectroBikesPage() {
     if (!window.confirm(`¿Eliminar "${label}"?`)) return;
     try {
       await deleteElectroBike(bike.id);
+
+      try {
+        const deletePayload = {
+          items: [
+            {
+              productId: String(bike.id),
+              productType: "electrobike",
+              productName: `${bike.marca?.nombre ?? "ElectroBike"} ${bike.modelo}`,
+              unitPrice: Number(bike.precio ?? 0),
+              subtotal: 0,
+            },
+          ],
+          totalAmount: 0,
+          saleDate: new Date().toISOString(),
+        };
+        console.debug("[reports] sending createReportDeleted", deletePayload);
+
+        await createReportDeleted(deletePayload);
+      } catch (reportErr) {
+        console.error("No se pudo generar el reporte de eliminación:", reportErr);
+        if ((reportErr as any)?.response) {
+          console.error("Reporte de eliminación response data:", (reportErr as any).response.data);
+          console.error("Reporte de eliminación response status:", (reportErr as any).response.status);
+        }
+      }
+
       await loadAll();
     } catch (e) {
       alert(getErrorMessage(e, "No se pudo eliminar."));

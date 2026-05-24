@@ -14,10 +14,13 @@ export const dateFormatter = new Intl.DateTimeFormat("es-CO", {
   timeStyle: "short",
 });
 
-export const formatCurrency = (value?: number | null) =>
-  typeof value === "number" && Number.isFinite(value)
-    ? currencyFormatter.format(value)
+export const formatCurrency = (value?: number | string | null) => {
+  if (value === undefined || value === null) return "Sin precio";
+  const numericValue = typeof value === "string" ? Number(value) : value;
+  return typeof numericValue === "number" && Number.isFinite(numericValue)
+    ? currencyFormatter.format(numericValue)
     : "Sin precio";
+};
 
 export const formatCompact = (value?: number | null) =>
   typeof value === "number" && Number.isFinite(value)
