@@ -25,3 +25,20 @@ export const refreshTokenRequest = async (refreshToken: string) => {
 export const logoutRequest = async () => {
   await authProtectedClient.post("/qzMotorCenter/auth/logout");
 };
+
+export const getUsersRequest = async () => {
+  const { data } = await authProtectedClient.get<AuthUser[]>("/qzMotorCenter/auth");
+  return data;
+};
+
+export const updateUserRequest = async (cedula: number, payload: Partial<RegisterPayload>) => {
+  const { data } = await authProtectedClient.put<AuthUser>(
+    `/qzMotorCenter/auth/${cedula}`,
+    payload,
+  );
+  return data;
+};
+
+export const deleteUserRequest = async (cedula: number) => {
+  await authProtectedClient.delete(`/qzMotorCenter/auth/${cedula}`);
+};

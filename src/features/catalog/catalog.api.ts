@@ -29,7 +29,7 @@ export interface InventorySnapshot {
   items: CatalogItem[];
 }
 
-const buildAssetUrl = (baseUrl: string, imagePath?: string | null) => {
+const buildAssetUrl = (_baseUrl: string, imagePath?: string | null) => {
   if (!imagePath) {
     return null;
   }
@@ -38,7 +38,7 @@ const buildAssetUrl = (baseUrl: string, imagePath?: string | null) => {
     return imagePath;
   }
 
-  return `${baseUrl}${imagePath.startsWith("/") ? imagePath : `/${imagePath}`}`;
+  return null;
 };
 
 const normalizeCars = (items: Array<Record<string, unknown>>): CatalogItem[] =>

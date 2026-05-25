@@ -1,163 +1,234 @@
-import { useState } from "react";
-import { MdPeople, MdAdd, MdSearch, MdEdit, MdDelete, MdClose } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { MdAdd, MdClose, MdDelete, MdEdit, MdPeople, MdRefresh, MdSearch, MdWarning } from "react-icons/md";
+import { deleteUserRequest, getUsersRequest, registerRequest, updateUserRequest } from "../features/auth/auth.api";
+import type { AuthUser, RegisterPayload } from "../features/auth/auth.types";
+import { formatDateTime } from "../lib/formatters";
+import { getErrorMessage } from "../lib/http/get-error-message";
 
-interface User {
-  id: number;
-  nombre: string;
-  apellido: string;
-  cedula: string;
-  correo: string;
-  telefono: string;
-  role: string;
-  estado: string;
-}
+type UserForm = Omit<RegisterPayload, "fechaRegistro"> & {
+  fechaRegistro?: string;
+};
 
-const mockUsers: User[] = [
-  { id: 1, nombre: "Ana", apellido: "García", cedula: "1234567890", correo: "ana@qz.com", telefono: "3001234567", role: "admin", estado: "activo" },
-  { id: 2, nombre: "Carlos", apellido: "Pérez", cedula: "0987654321", correo: "carlos@qz.com", telefono: "3109876543", role: "operador", estado: "activo" },
-  { id: 3, nombre: "María", apellido: "López", cedula: "1122334455", correo: "maria@qz.com", telefono: "3201122334", role: "cliente", estado: "inactivo" },
-];
+const emptyForm: UserForm = {
+  cedula: 0,
+  nombre: "",
+  apellido: "",
+  email: "",
+  contraseña: "",
+  telefono: "",
+  fechaRegistro: "",
+};
 
 export default function UsersPage() {
-  const [users] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<AuthUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ nombre: "", apellido: "", cedula: "", correo: "", telefono: "", role: "operador" });
+  const [editTarget, setEditTarget] = useState<AuthUser | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [form, setForm] = useState<UserForm>(emptyForm);
 
-  const filtered = users.filter((u) => {
-    const t = search.toLowerCase();
-    return u.nombre.toLowerCase().includes(t) || u.correo.toLowerCase().includes(t) || u.cedula.includes(t);
+  const loadAll = async () => {
+    setLoading(true);
+    setPageError("");
+    try {
+      setUsers(await getUsersRequest());
+    } catch (e) {
+      setPageError(getErrorMessage(e, "No se pudo cargar usuarios desde Auth por el gateway."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadAll();
+  }, []);
+
+  const filtered = users.filter((user) => {
+    const term = search.toLowerCase();
+    return (
+      String(user.nombre ?? "").toLowerCase().includes(term) ||
+      String(user.apellido ?? "").toLowerCase().includes(term) ||
+      String(user.email ?? "").toLowerCase().includes(term) ||
+      String(user.cedula ?? "").includes(term)
+    );
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const openCreate = () => {
+    setEditTarget(null);
+    setForm(emptyForm);
+    setFormError("");
+    setShowModal(true);
+  };
+
+  const openEdit = (user: AuthUser) => {
+    setEditTarget(user);
+    setForm({
+      cedula: Number(user.cedula ?? 0),
+      nombre: user.nombre ?? "",
+      apellido: user.apellido ?? "",
+      email: user.email ?? "",
+      contraseña: user.contraseña ?? "",
+      telefono: user.telefono ?? "",
+      fechaRegistro: user.fechaRegistro ? String(user.fechaRegistro).slice(0, 16) : "",
+    });
+    setFormError("");
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditTarget(null);
+    setFormError("");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "cedula" ? Number(value) : value,
+    }));
+  };
+
+  const buildPayload = (): RegisterPayload => ({
+    cedula: Number(form.cedula),
+    nombre: form.nombre,
+    apellido: form.apellido,
+    email: form.email,
+    contraseña: form.contraseña,
+    telefono: form.telefono,
+    fechaRegistro: form.fechaRegistro || new Date().toISOString(),
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
+    try {
+      if (editTarget?.cedula) {
+        await updateUserRequest(Number(editTarget.cedula), buildPayload());
+      } else {
+        await registerRequest(buildPayload());
+      }
+      closeModal();
+      await loadAll();
+    } catch (e) {
+      setFormError(getErrorMessage(e, "Error al guardar usuario."));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (user: AuthUser) => {
+    if (!user.cedula || !window.confirm(`Eliminar usuario "${user.email}"?`)) return;
+    try {
+      await deleteUserRequest(Number(user.cedula));
+      await loadAll();
+    } catch (e) {
+      alert(getErrorMessage(e, "No se pudo eliminar el usuario."));
+    }
+  };
 
   return (
     <div className="animate-fade-in">
       <div className="page-header">
         <div>
           <h1>Usuarios</h1>
-          <p>Gestión de usuarios del sistema — microservicio Auth · Spring Boot + JWT + MySQL</p>
+          <p>Gestion de usuarios del sistema · API Gateway /qzMotorCenter/auth</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            <MdAdd /> Nuevo Usuario
-          </button>
+          <button className="btn btn-secondary" onClick={loadAll} title="Recargar"><MdRefresh /></button>
+          <button className="btn btn-primary" onClick={openCreate}><MdAdd /> Nuevo Usuario</button>
         </div>
       </div>
 
-      {/* Search */}
+      {pageError && (
+        <div className="login-error" style={{ marginBottom: "1rem", display: "flex", gap: "0.75rem" }}>
+          <MdWarning style={{ flexShrink: 0 }} />
+          <span>{pageError}</span>
+        </div>
+      )}
+
       <div className="search-bar">
         <span className="search-bar-icon"><MdSearch /></span>
         <input
           type="text"
-          placeholder="Buscar por nombre, cédula o correo..."
+          placeholder="Buscar por nombre, cedula o correo..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Table */}
       <div className="table-container">
         <table>
           <thead>
             <tr>
               <th>Nombre</th>
-              <th>Cédula</th>
+              <th>Cedula</th>
               <th>Correo</th>
-              <th>Teléfono</th>
-              <th>Rol</th>
-              <th>Estado</th>
+              <th>Telefono</th>
+              <th>Registro</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <tr><td colSpan={6}><div className="empty-state"><p>Cargando usuarios reales...</p></div></td></tr>
+            ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <div className="empty-state">
                     <div className="empty-state-icon"><MdPeople /></div>
                     <h3>Sin resultados</h3>
-                    <p>No se encontraron usuarios con ese criterio.</p>
+                    <p>{users.length === 0 ? "No hay usuarios registrados o el gateway no expone el listado." : "No se encontraron usuarios con ese criterio."}</p>
                   </div>
                 </td>
               </tr>
-            ) : (
-              filtered.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    <div className="vehicle-name">{u.nombre} {u.apellido}</div>
-                  </td>
-                  <td>{u.cedula}</td>
-                  <td>{u.correo}</td>
-                  <td>{u.telefono}</td>
-                  <td>
-                    <span className={`badge ${u.role === "admin" ? "badge-purple" : u.role === "operador" ? "badge-info" : "badge-warning"}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${u.estado === "activo" ? "badge-success" : "badge-danger"}`}>
-                      {u.estado}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="actions-cell">
-                      <button className="btn-icon" title="Editar"><MdEdit /></button>
-                      <button className="btn-icon" title="Eliminar" style={{ color: "var(--danger)" }}><MdDelete /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
+            ) : filtered.map((user) => (
+              <tr key={user.cedula ?? user.email}>
+                <td><div className="vehicle-name">{user.nombre} {user.apellido}</div></td>
+                <td>{user.cedula}</td>
+                <td>{user.email}</td>
+                <td>{user.telefono}</td>
+                <td>{formatDateTime(user.fechaRegistro ? String(user.fechaRegistro) : null)}</td>
+                <td>
+                  <div className="actions-cell">
+                    <button className="btn-icon" title="Editar" onClick={() => openEdit(user)}><MdEdit /></button>
+                    <button className="btn-icon" title="Eliminar" style={{ color: "var(--danger)" }} onClick={() => handleDelete(user)}><MdDelete /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Nuevo Usuario</h2>
-              <button className="btn-icon" onClick={() => setShowModal(false)}><MdClose /></button>
+              <h2>{editTarget ? "Editar Usuario" : "Nuevo Usuario"}</h2>
+              <button className="btn-icon" onClick={closeModal}><MdClose /></button>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Nombre</label>
-                <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" />
+            {formError && <div className="login-error" style={{ marginBottom: "1rem" }}>{formError}</div>}
+            <form onSubmit={handleSubmit}>
+              <div className="form-row">
+                <div className="form-group"><label>Nombre</label><input name="nombre" value={form.nombre} onChange={handleChange} required /></div>
+                <div className="form-group"><label>Apellido</label><input name="apellido" value={form.apellido} onChange={handleChange} required /></div>
               </div>
-              <div className="form-group">
-                <label>Apellido</label>
-                <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" />
+              <div className="form-row">
+                <div className="form-group"><label>Cedula</label><input name="cedula" value={form.cedula || ""} onChange={handleChange} type="number" disabled={Boolean(editTarget)} required /></div>
+                <div className="form-group"><label>Telefono</label><input name="telefono" value={form.telefono} onChange={handleChange} required /></div>
               </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Cédula</label>
-                <input name="cedula" value={form.cedula} onChange={handleChange} placeholder="Cédula" />
+              <div className="form-group"><label>Correo electronico</label><input name="email" value={form.email} onChange={handleChange} type="email" disabled={Boolean(editTarget)} required /></div>
+              <div className="form-group"><label>Contrasena</label><input name="contraseña" value={form.contraseña} onChange={handleChange} type="password" required /></div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={submitting}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? "Guardando..." : "Guardar"}</button>
               </div>
-              <div className="form-group">
-                <label>Teléfono</label>
-                <input name="telefono" value={form.telefono} onChange={handleChange} placeholder="Teléfono" />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Correo electrónico</label>
-              <input name="correo" value={form.correo} onChange={handleChange} placeholder="correo@ejemplo.com" />
-            </div>
-            <div className="form-group">
-              <label>Rol</label>
-              <select name="role" value={form.role} onChange={handleChange}>
-                <option value="admin">Admin</option>
-                <option value="operador">Operador</option>
-                <option value="cliente">Cliente</option>
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1.5rem" }}>
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-              <button className="btn btn-primary">Crear Usuario</button>
-            </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,36 +1,68 @@
-import { useState } from "react";
-import { MdSend, MdAdd, MdSmartToy } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { MdAdd, MdSend, MdSmartToy, MdWarning } from "react-icons/md";
+import { aiClient } from "../lib/http/clients";
+import { getErrorMessage } from "../lib/http/get-error-message";
 
 interface Message {
   role: "assistant" | "user";
   text: string;
 }
 
-const mockConversations = [
-  { id: 1, title: "Consulta de inventario", date: "Hoy" },
-  { id: 2, title: "Análisis de ventas Q1", date: "Ayer" },
-  { id: 3, title: "Recomendación de scooter", date: "Hace 2 días" },
-];
+interface Conversation {
+  id: string | number;
+  title?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const getConversationTitle = (conversation: Conversation) =>
+  conversation.title || `Conversacion ${conversation.id}`;
 
 export default function AiAssistantPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", text: "¡Hola! Soy el asistente IA de QZ Motor Center. Puedo ayudarte con consultas sobre inventario, estadísticas, recomendaciones de vehículos y más. ¿En qué puedo ayudarte hoy?" },
-  ]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pageError, setPageError] = useState("");
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages((prev) => [...prev, { role: "user", text: input }]);
+  const loadConversations = async () => {
+    setPageError("");
+    try {
+      const { data } = await aiClient.get<Conversation[]>("/api/v1/conversations");
+      setConversations(data);
+    } catch (e) {
+      setPageError(getErrorMessage(e, "No se pudieron cargar conversaciones desde IA."));
+    }
+  };
+
+  useEffect(() => {
+    void loadConversations();
+  }, []);
+
+  const handleSend = async () => {
+    const prompt = input.trim();
+    if (!prompt) return;
+
+    setMessages((prev) => [...prev, { role: "user", text: prompt }]);
     setInput("");
     setLoading(true);
-    setTimeout(() => {
+    setPageError("");
+
+    try {
+      const { data } = await aiClient.post<{ response?: string; answer?: string; message?: string }>("/api/v1/chat", {
+        message: prompt,
+        prompt,
+      });
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: "Entendido. Esta funcionalidad estará disponible una vez conectado el microservicio IA (FastAPI + PostgreSQL). Por ahora estoy en modo de demostración visual." },
+        { role: "assistant", text: data.response ?? data.answer ?? data.message ?? "Respuesta recibida sin contenido." },
       ]);
+      await loadConversations();
+    } catch (e) {
+      setPageError(getErrorMessage(e, "No se pudo enviar la consulta al microservicio IA."));
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -38,33 +70,39 @@ export default function AiAssistantPage() {
       <div className="page-header">
         <div>
           <h1>Asistente IA</h1>
-          <p>Consultas inteligentes — microservicio IA · FastAPI + PostgreSQL</p>
+          <p>Consultas inteligentes · API Gateway /api/v1</p>
         </div>
-        <button className="btn btn-secondary">
-          <MdAdd /> Nueva conversación
+        <button className="btn btn-secondary" onClick={() => setMessages([])}>
+          <MdAdd /> Nueva conversacion
         </button>
       </div>
 
+      {pageError && (
+        <div className="login-error" style={{ marginBottom: "1rem", display: "flex", gap: "0.75rem" }}>
+          <MdWarning style={{ flexShrink: 0 }} />
+          <span>{pageError}</span>
+        </div>
+      )}
+
       <div className="ai-layout">
-        {/* Conversations sidebar */}
         <div className="ai-sidebar-panel">
           <div style={{ padding: "1rem", borderBottom: "1px solid var(--border)", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Conversaciones
           </div>
           <div style={{ overflowY: "auto", flex: 1 }}>
-            {mockConversations.map((c) => (
-              <div key={c.id} style={{ padding: "0.85rem 1rem", borderBottom: "1px solid var(--border)", cursor: "pointer", transition: "background var(--transition-fast)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-card-hover)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text-primary)" }}>{c.title}</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>{c.date}</div>
+            {conversations.length === 0 ? (
+              <div style={{ padding: "1rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>Sin conversaciones registradas.</div>
+            ) : conversations.map((conversation) => (
+              <div key={conversation.id} style={{ padding: "0.85rem 1rem", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text-primary)" }}>{getConversationTitle(conversation)}</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+                  {conversation.updatedAt ?? conversation.createdAt ?? "Sin fecha"}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Chat panel */}
         <div className="ai-chat-panel">
           <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), var(--accent-dark))", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "1rem" }}>
@@ -72,23 +110,27 @@ export default function AiAssistantPage() {
             </div>
             <div>
               <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>QZ Assistant</div>
-              <div style={{ fontSize: "0.72rem", color: "var(--success)" }}>● En línea</div>
+              <div style={{ fontSize: "0.72rem", color: "var(--success)" }}>Conectado al gateway</div>
             </div>
           </div>
 
           <div className="ai-messages">
-            {messages.map((m, i) => (
-              <div key={i} className={`ai-message ${m.role}`}>
-                <div className="ai-message-avatar">
-                  {m.role === "assistant" ? "🤖" : "U"}
-                </div>
-                <div className="ai-message-bubble">{m.text}</div>
+            {messages.length === 0 && (
+              <div className="empty-state">
+                <h3>Nueva consulta</h3>
+                <p>Escribe una pregunta para enviarla al microservicio IA.</p>
+              </div>
+            )}
+            {messages.map((message, index) => (
+              <div key={`${message.role}-${index}`} className={`ai-message ${message.role}`}>
+                <div className="ai-message-avatar">{message.role === "assistant" ? "IA" : "U"}</div>
+                <div className="ai-message-bubble">{message.text}</div>
               </div>
             ))}
             {loading && (
               <div className="ai-message assistant">
-                <div className="ai-message-avatar">🤖</div>
-                <div className="ai-message-bubble" style={{ color: "var(--text-muted)" }}>Escribiendo...</div>
+                <div className="ai-message-avatar">IA</div>
+                <div className="ai-message-bubble" style={{ color: "var(--text-muted)" }}>Consultando...</div>
               </div>
             )}
           </div>
@@ -96,7 +138,7 @@ export default function AiAssistantPage() {
           <div className="ai-input-area">
             <input
               type="text"
-              placeholder="Escribe tu consulta aquí..."
+              placeholder="Escribe tu consulta aqui..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
