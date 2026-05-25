@@ -4,22 +4,7 @@ import { MdBadge, MdLock, MdMail, MdPerson, MdPhone } from "react-icons/md";
 import { registerRequest } from "../features/auth/auth.api";
 import { getErrorMessage } from "../lib/http/get-error-message";
 
-const toLocalDateTimeForBackend = () => {
-  const date = new Date(Date.now() - 60_000);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const day = [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-");
-  const time = [
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join(":");
-
-  return `${day}T${time}`;
-};
+const FECHA_REGISTRO_PROBADA = "2025-09-18T10:30:00";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -57,7 +42,7 @@ export default function RegisterPage() {
         apellido: form.apellido.trim(),
         email: form.email.trim(),
         contraseña: form.password,
-        fechaRegistro: toLocalDateTimeForBackend(),
+        fechaRegistro: FECHA_REGISTRO_PROBADA,
         telefono: form.telefono.trim(),
       };
 

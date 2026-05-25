@@ -6,8 +6,8 @@ import {
 import {
   getMotorcycles, createMotorcycle,
   updateMotorcycle, deleteMotorcycle,
-} from "../features/motorcycle/motorcycle.api";
-import type { Motorcycle, CrearMotorcycleInput } from "../features/motorcycle/motorcycle.type";
+} from "../features/motorcycles/motorcycle.api";
+import type { Motorcycle, CrearMotorcycleInput } from "../features/motorcycles/motorcycle.type";
 import { formatCurrency } from "../lib/formatters";
 import { getErrorMessage } from "../lib/http/get-error-message";
 import { env } from "../config/env";
