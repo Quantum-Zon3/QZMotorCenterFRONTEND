@@ -4,7 +4,22 @@ import { MdBadge, MdLock, MdMail, MdPerson, MdPhone } from "react-icons/md";
 import { registerRequest } from "../features/auth/auth.api";
 import { getErrorMessage } from "../lib/http/get-error-message";
 
-const todayForBackend = () => new Date().toISOString().slice(0, 19);
+const toLocalDateTimeForBackend = () => {
+  const date = new Date(Date.now() - 60_000);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const day = [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join("-");
+  const time = [
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join(":");
+
+  return `${day}T${time}`;
+};
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -13,7 +28,7 @@ export default function RegisterPage() {
     nombre: "",
     apellido: "",
     email: "",
-    contraseña: "",
+    password: "",
     telefono: "",
   });
   const [error, setError] = useState("");
@@ -28,7 +43,7 @@ export default function RegisterPage() {
     event.preventDefault();
     setError("");
 
-    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,45}$/.test(form.contraseña)) {
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,45}$/.test(form.password)) {
       setError("La contrasena debe tener entre 8 y 45 caracteres e incluir al menos una letra y un numero.");
       return;
     }
@@ -36,15 +51,17 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await registerRequest({
+      const payload = {
         cedula: Number(form.cedula),
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
         email: form.email.trim(),
-        contraseña: form.contraseña,
+        contraseña: form.password,
+        fechaRegistro: toLocalDateTimeForBackend(),
         telefono: form.telefono.trim(),
-        fechaRegistro: todayForBackend(),
-      });
+      };
+
+      await registerRequest(payload);
       navigate("/login", {
         replace: true,
         state: { registeredEmail: form.email.trim() },
@@ -135,10 +152,10 @@ export default function RegisterPage() {
           <div className="login-input-group">
             <span className="input-icon"><MdLock /></span>
             <input
-              name="contraseña"
+              name="password"
               type="password"
               placeholder="Contrasena con letras y numeros"
-              value={form.contraseña}
+              value={form.password}
               onChange={handleChange}
               required
               minLength={8}
