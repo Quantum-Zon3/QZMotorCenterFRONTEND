@@ -1,4 +1,4 @@
-import { authClient, authProtectedClient } from "../../lib/http/clients";
+import { authClient, authProtectedClient, serverlessClient } from "../../lib/http/clients";
 import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from "./auth.types";
 
 export const registerRequest = async (payload: RegisterPayload) => {
@@ -24,6 +24,13 @@ export const refreshTokenRequest = async (refreshToken: string) => {
 
 export const logoutRequest = async () => {
   await authProtectedClient.post("/qzMotorCenter/auth/logout");
+};
+
+export const sendLoginEmailRequest = async (email: string) => {
+  await serverlessClient.post("/api/enviarCorreo", {
+    email,
+    tipo: "inicio_sesion",
+  });
 };
 
 export const getUsersRequest = async () => {

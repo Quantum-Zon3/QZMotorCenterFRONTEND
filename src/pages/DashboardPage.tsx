@@ -1,35 +1,47 @@
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../features/auth/useAuth";
-import {
-  MdDirectionsCar, MdDirectionsBike,
-  MdElectricBike, MdElectricScooter, MdBarChart,
-  MdSmartToy, MdAdd
-} from "react-icons/md";
-import { getResumenCatalogo } from "../features/electrobike/electrobike.api";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  MdAdd,
+  MdBarChart,
+  MdDirectionsBike,
+  MdDirectionsCar,
+  MdElectricBike,
+  MdElectricScooter,
+  MdSmartToy,
+} from "react-icons/md";
+import { useAuth } from "../features/auth/useAuth";
+import { fetchInventoryCounts, type InventoryServiceKey } from "../features/catalog/catalog.api";
+import { getResumenCatalogo } from "../features/electrobike/electrobike.api";
 import { getAllReports, type Reporte } from "../features/reports/reports.api";
 import { formatCurrency } from "../lib/formatters";
 
+const emptyCounts: Record<InventoryServiceKey, number> = {
+  cars: 0,
+  motorcycles: 0,
+  electrobikes: 0,
+  scooters: 0,
+};
+
 const baseStats = [
-  { label: "Autos", value: "—", icon: <MdDirectionsCar />, color: "teal", sub: "Cars · Node + PostgreSQL" },
-  { label: "Motos", value: "—", icon: <MdDirectionsBike />, color: "orange", sub: "Motorcycles · Flask" },
-  { label: "Electrobikes", value: "—", icon: <MdElectricBike />, color: "blue", sub: "ElectroBike · Node" },
-  { label: "Scooters", value: "—", icon: <MdElectricScooter />, color: "green", sub: "Scooter · Node" },
-  { label: "Reportes", value: "—", icon: <MdBarChart />, color: "pink", sub: "Reports · MongoDB" },
-];
+  { label: "Autos", key: "cars", icon: <MdDirectionsCar />, color: "teal", sub: "Cars - Node + PostgreSQL" },
+  { label: "Motos", key: "motorcycles", icon: <MdDirectionsBike />, color: "orange", sub: "Motorcycles - Flask" },
+  { label: "Electrobikes", key: "electrobikes", icon: <MdElectricBike />, color: "blue", sub: "ElectroBike - Node" },
+  { label: "Scooters", key: "scooters", icon: <MdElectricScooter />, color: "green", sub: "Scooter - Node" },
+  { label: "Reportes", key: "reports", icon: <MdBarChart />, color: "pink", sub: "Reports - MongoDB" },
+] as const;
 
 const quickActions = [
-  { title: "Autos", icon: <MdDirectionsCar />, desc: "Inventario de automóviles. Agrega, edita o elimina registros.", to: "/app/inventario/autos", btnLabel: "Ver Autos" },
-  { title: "Motos", icon: <MdDirectionsBike />, desc: "Catálogo de motocicletas con cilindraje y estado.", to: "/app/inventario/motos", btnLabel: "Ver Motos" },
-  { title: "Electrobikes", icon: <MdElectricBike />, desc: "Bicicletas eléctricas — autonomía, voltaje y stock.", to: "/app/inventario/electrobikes", btnLabel: "Ver Electrobikes" },
-  { title: "Scooters", icon: <MdElectricScooter />, desc: "Scooters eléctricas urbanas por marca y modelo.", to: "/app/inventario/scooters", btnLabel: "Ver Scooters" },
+  { title: "Autos", icon: <MdDirectionsCar />, desc: "Inventario de automoviles. Agrega, edita o elimina registros.", to: "/app/inventario/autos", btnLabel: "Ver Autos" },
+  { title: "Motos", icon: <MdDirectionsBike />, desc: "Catalogo de motocicletas con cilindraje y estado.", to: "/app/inventario/motos", btnLabel: "Ver Motos" },
+  { title: "Electrobikes", icon: <MdElectricBike />, desc: "Bicicletas electricas con autonomia, voltaje y stock.", to: "/app/inventario/electrobikes", btnLabel: "Ver Electrobikes" },
+  { title: "Scooters", icon: <MdElectricScooter />, desc: "Scooters electricas urbanas por marca y modelo.", to: "/app/inventario/scooters", btnLabel: "Ver Scooters" },
   { title: "Asistente IA", icon: <MdSmartToy />, desc: "Consulta al asistente inteligente del sistema.", to: "/app/ia", btnLabel: "Abrir IA" },
 ];
 
 export default function DashboardPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [totalElectroBikes, setTotalElectroBikes] = useState<number | null>(null);
+  const [inventoryCounts, setInventoryCounts] = useState<Record<InventoryServiceKey, number>>(emptyCounts);
   const [reports, setReports] = useState<Reporte[]>([]);
   const [reportsCount, setReportsCount] = useState<number | null>(null);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -37,14 +49,18 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [resumen, reportsData] = await Promise.all([
+        const [resumen, reportsData, countsData] = await Promise.all([
           getResumenCatalogo().catch(() => null),
           getAllReports().catch(() => null),
+          fetchInventoryCounts().catch(() => null),
         ]);
 
-        if (resumen) {
-          setTotalElectroBikes(resumen.totalElectroBikes);
-        }
+        setInventoryCounts({
+          ...emptyCounts,
+          ...(countsData ?? {}),
+          electrobikes: countsData?.electrobikes ?? resumen?.totalElectroBikes ?? 0,
+        });
+
         if (reportsData) {
           setReports(reportsData.data || []);
           setReportsCount(reportsData.total ?? reportsData.data?.length ?? 0);
@@ -56,12 +72,12 @@ export default function DashboardPage() {
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return "Buenos días";
+    if (h < 12) return "Buenos dias";
     if (h < 18) return "Buenas tardes";
     return "Buenas noches";
   };
@@ -69,63 +85,53 @@ export default function DashboardPage() {
   const displayName = session?.user?.nombre ?? "Admin";
 
   const stats = baseStats.map((stat) => {
-    if (stat.label === "Electrobikes") {
-      return { ...stat, value: totalElectroBikes ?? "—" };
+    if (stat.key === "reports") {
+      return { ...stat, value: reportsCount ?? reports.length };
     }
-    if (stat.label === "Reportes") {
-      const count = reportsCount ?? (reports.length > 0 ? reports.length : null);
-      return { ...stat, value: count !== null ? String(count) : "—" };
-    }
-    return stat;
+
+    return { ...stat, value: inventoryCounts[stat.key] };
   });
 
   return (
     <div className="dashboard">
-      {/* Header */}
       <div className="dashboard-header">
-        <h1>{greeting()}, {displayName} 👋</h1>
-        <p>Aquí tienes el resumen de tu centro de gestión multimarca</p>
+        <h1>{greeting()}, {displayName}</h1>
+        <p>Aqui tienes el resumen de tu centro de gestion multimarca</p>
       </div>
 
-      {/* Stats */}
       <div className="stats-grid">
-        {stats.map((s) => (
-          <div key={s.label} className="stat-card">
-            <div className={`stat-icon ${s.color}`}>{s.icon}</div>
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat-card">
+            <div className={`stat-icon ${stat.color}`}>{stat.icon}</div>
             <div className="stat-info">
-              <h3>{s.label}</h3>
-              <div className="stat-value">{s.value}</div>
-              <div className="stat-change">{s.sub}</div>
+              <h3>{stat.label}</h3>
+              <div className="stat-value">{stat.value}</div>
+              <div className="stat-change">{stat.sub}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <h2 style={{ marginBottom: "1rem", fontSize: "1.15rem" }}>Acceso rápido</h2>
+      <h2 style={{ marginBottom: "1rem", fontSize: "1.15rem" }}>Acceso rapido</h2>
       <div className="quick-actions">
-        {quickActions.map((qa) => (
-          <div key={qa.to} className="quick-action-card">
-            <h3>{qa.icon} {qa.title}</h3>
-            <p>{qa.desc}</p>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => navigate(qa.to)}
-            >
-              <MdAdd /> {qa.btnLabel}
+        {quickActions.map((action) => (
+          <div key={action.to} className="quick-action-card">
+            <h3>{action.icon} {action.title}</h3>
+            <p>{action.desc}</p>
+            <button className="btn btn-primary btn-sm" onClick={() => navigate(action.to)}>
+              <MdAdd /> {action.btnLabel}
             </button>
           </div>
         ))}
       </div>
 
-      {/* Reportes Recientes Section */}
       <div className="card" style={{ marginTop: "2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
           <h2 style={{ fontSize: "1.2rem", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
             <MdBarChart style={{ color: "var(--accent-light)", fontSize: "1.4rem" }} /> Reportes recientes
           </h2>
           <span className="badge badge-purple" style={{ textTransform: "uppercase", fontSize: "0.68rem", padding: "0.25rem 0.65rem" }}>
-            Reports Service · MongoDB
+            Reports Service - MongoDB
           </span>
         </div>
 
@@ -135,10 +141,9 @@ export default function DashboardPage() {
           </div>
         ) : reports.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem 1rem", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>⚡</div>
             <h3 style={{ fontSize: "0.95rem", color: "var(--text-secondary)", marginBottom: "0.25rem" }}>Sin reportes registrados</h3>
             <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", maxWidth: "400px", margin: "0 auto" }}>
-              Aquí verás todos los reportes que genere el servicio: creación, venta, eliminación y otros eventos.
+              Aqui veras todos los reportes que genere el servicio: creacion, venta, eliminacion y otros eventos.
             </p>
           </div>
         ) : (
@@ -148,7 +153,7 @@ export default function DashboardPage() {
               const eventLabel =
                 eventType === "delete" ? "ELIMINADO" :
                 eventType === "sale" ? "VENTA" :
-                eventType === "create" ? "CREACIÓN" :
+                eventType === "create" ? "CREACION" :
                 "GENERAL";
               const badgeColor =
                 eventType === "delete" ? "var(--danger)" :
@@ -157,53 +162,51 @@ export default function DashboardPage() {
                 "var(--primary)";
 
               return (
-                <div 
-                  key={report._id} 
+                <div
+                  key={report._id}
                   className="report-item-hover"
-                  style={{ 
-                    display: "flex", 
-                    justifyContent: "space-between", 
-                    alignItems: "center", 
-                    padding: "0.85rem 1.15rem", 
-                    background: "var(--bg-secondary)", 
-                    border: "1px solid var(--border)", 
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0.85rem 1.15rem",
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border)",
                     borderRadius: "var(--radius-md)",
-                    cursor: "default"
+                    cursor: "default",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
-                    <div style={{ 
-                      width: 38, 
-                      height: 38, 
-                      borderRadius: "var(--radius-sm)", 
+                    <div style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: "var(--radius-sm)",
                       background: badgeColor,
-                      color: "var(--bg-base)", 
-                      display: "flex", 
-                      alignItems: "center", 
+                      color: "var(--bg-base)",
+                      display: "flex",
+                      alignItems: "center",
                       justifyContent: "center",
                       fontSize: "0.9rem",
-                      fontWeight: 700
+                      fontWeight: 700,
                     }}>
                       {eventLabel[0]}
                     </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-white)", marginBottom: "0.15rem" }}>
-                        {report.items && report.items.length > 0 
-                          ? report.items.map(i => i.productName).join(", ") 
+                        {report.items && report.items.length > 0
+                          ? report.items.map((item) => item.productName).join(", ")
                           : "Reporte general"}
                       </div>
                       <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span className="badge badge-purple" style={{ fontSize: "0.6rem", padding: "0.1rem 0.35rem" }}>
                           {eventType.toUpperCase()}
                         </span>
-                        <span>•</span>
                         <span>ID: {report._id.substring(0, 8)}...</span>
-                        <span>•</span>
                         <span>{new Date(report.saleDate).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 700, color: "var(--text-white)", fontSize: "0.95rem" }}>
                       {report.totalAmount > 0 ? formatCurrency(report.totalAmount) : "0"}

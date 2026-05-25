@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { sessionStorageAdapter } from "../../lib/session/storage";
-import { loginRequest, logoutRequest } from "./auth.api";
+import { loginRequest, logoutRequest, sendLoginEmailRequest } from "./auth.api";
 import type { AuthSession, LoginPayload } from "./auth.types";
 import { AuthContext, type AuthContextValue } from "./auth-context";
 
@@ -20,6 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     sessionStorageAdapter.set(nextSession);
     setSession(nextSession);
+
+    const email = nextSession.user?.email ?? payload.email;
+    if (email) {
+      sendLoginEmailRequest(email).catch((error) => {
+        console.error("No se pudo enviar el correo de inicio de sesion:", error);
+      });
+    }
   };
 
   const logout = async () => {
