@@ -6,11 +6,10 @@ export interface Scooter {
   model?: string;
   autonomia: number;
   voltaje: number;
-  año?: string | number;
-  aÃ±o?: string | number;
   precio: number | string;
   color?: string;
   photoUrl?: string | null;
+  [key: string]: unknown;
 }
 
 export interface ScooterFormInput {
@@ -18,7 +17,7 @@ export interface ScooterFormInput {
   modelo: string;
   autonomia: number;
   voltaje: number;
-  año: string;
+  anio: string;
   precio: number;
   color: string;
   photoUrl: string;

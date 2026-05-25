@@ -9,9 +9,9 @@ import {
   MdSearch,
   MdWarning,
 } from "react-icons/md";
+import { createReport200OK, createReportDeleted } from "../features/reports/reports.api";
 import { createScooter, deleteScooter, getScooters, updateScooter } from "../features/scooters/scooter.api";
 import type { Scooter, ScooterFormInput } from "../features/scooters/scooter.type";
-import { createReport200OK, createReportDeleted } from "../features/reports/reports.api";
 import { formatCurrency } from "../lib/formatters";
 import { getErrorMessage } from "../lib/http/get-error-message";
 
@@ -20,7 +20,7 @@ const emptyForm: ScooterFormInput = {
   modelo: "",
   autonomia: 0,
   voltaje: 0,
-  año: String(new Date().getFullYear()),
+  anio: String(new Date().getFullYear()),
   precio: 0,
   color: "",
   photoUrl: "",
@@ -28,7 +28,7 @@ const emptyForm: ScooterFormInput = {
 
 const scooterBrand = (scooter: Scooter) => scooter.marca ?? scooter.brand ?? "";
 const scooterModel = (scooter: Scooter) => scooter.modelo ?? scooter.model ?? "";
-const scooterYear = (scooter: Scooter) => scooter.año ?? scooter.aÃ±o ?? "";
+const scooterYear = (scooter: Scooter) => scooter["a\u00f1o"] ?? scooter["a\u00c3\u00b1o"] ?? "";
 
 export default function ScootersPage() {
   const [data, setData] = useState<Scooter[]>([]);
@@ -80,7 +80,7 @@ export default function ScootersPage() {
       modelo: scooterModel(scooter),
       autonomia: Number(scooter.autonomia),
       voltaje: Number(scooter.voltaje),
-      año: String(scooterYear(scooter)),
+      anio: String(scooterYear(scooter)),
       precio: Number(scooter.precio),
       color: scooter.color ?? "",
       photoUrl: scooter.photoUrl ?? "",
@@ -95,7 +95,7 @@ export default function ScootersPage() {
     setFormError("");
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numericFields = ["autonomia", "voltaje", "precio"];
     setForm((prev) => ({
@@ -166,7 +166,7 @@ export default function ScootersPage() {
       <div className="page-header">
         <div>
           <h1>Scooters</h1>
-          <p>Inventario de scooters electricas · API Gateway /api/scooters</p>
+          <p>Inventario de scooters electricas - API Gateway /api/scooters</p>
         </div>
         <div className="page-header-actions">
           <button className="btn btn-secondary" onClick={loadAll} title="Recargar"><MdRefresh /></button>
@@ -189,7 +189,7 @@ export default function ScootersPage() {
       <div className="table-container">
         <table>
           <thead>
-            <tr><th>Foto</th><th>Marca / Modelo</th><th>Año</th><th>Autonomia</th><th>Voltaje</th><th>Color</th><th>Precio</th><th>Acciones</th></tr>
+            <tr><th>Foto</th><th>Marca / Modelo</th><th>Anio</th><th>Autonomia</th><th>Voltaje</th><th>Color</th><th>Precio</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             {loading ? (
@@ -207,7 +207,7 @@ export default function ScootersPage() {
                   <div className="vehicle-name">{scooterBrand(scooter)}</div>
                   <div className="vehicle-sub">{scooterModel(scooter)}</div>
                 </td>
-                <td>{scooterYear(scooter) || "N/D"}</td>
+                <td>{String(scooterYear(scooter) || "N/D")}</td>
                 <td><span className="badge badge-success">{scooter.autonomia} km</span></td>
                 <td><span className="badge badge-info">{scooter.voltaje}V</span></td>
                 <td>{scooter.color ?? "N/D"}</td>
@@ -238,7 +238,7 @@ export default function ScootersPage() {
                 <div className="form-group"><label>Modelo</label><input name="modelo" value={form.modelo} onChange={handleChange} required /></div>
               </div>
               <div className="form-row">
-                <div className="form-group"><label>Año</label><input name="año" value={form.año} onChange={handleChange} maxLength={4} required /></div>
+                <div className="form-group"><label>Anio</label><input name="anio" value={form.anio} onChange={handleChange} maxLength={4} required /></div>
                 <div className="form-group"><label>Color</label><input name="color" value={form.color} onChange={handleChange} required /></div>
               </div>
               <div className="form-row">
