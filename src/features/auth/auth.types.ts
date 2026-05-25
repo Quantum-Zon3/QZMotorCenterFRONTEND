@@ -3,6 +3,8 @@ export interface AuthUser {
   nombre?: string;
   apellido?: string;
   email?: string;
+  contraseña?: string;
+  fechaRegistro?: Date;
   telefono?: string;
 }
 
