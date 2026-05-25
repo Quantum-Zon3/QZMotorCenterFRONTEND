@@ -5,7 +5,7 @@ const readEnv = (key: string, fallback: string) => {
 
 export const env = {
   appName: readEnv("VITE_APP_NAME", "QZ Motor Center"),
-  publicSiteUrl: readEnv("VITE_PUBLIC_SITE_URL", "http://localhost:5173"),
+  publicSiteUrl: readEnv("VITE_PUBLIC_SITE_URL", "https://qzmotorcenterfrontend.onrender.com"),
   apiGatewayUrl: readEnv("VITE_API_GATEWAY_URL", "https://qz-gateway.onrender.com"),
 } as const;
 

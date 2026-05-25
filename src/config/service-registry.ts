@@ -32,7 +32,7 @@ export const serviceRegistry: Record<ServiceKey, ServiceDefinition> = {
     description:
       "Gestión de autenticación, sesión, login, refresh token y consulta de usuarios.",
     baseUrl: env.apiGatewayUrl,
-    routeBase: "/auth",
+    routeBase: "/qzMotorCenter/auth",
     tab: "Usuarios",
     stack: "Spring Boot + JWT + MySQL",
   },
