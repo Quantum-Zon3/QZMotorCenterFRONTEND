@@ -10,12 +10,9 @@ import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
 import MotorcyclesPage from "../pages/MotorcyclesPage";
 import NotFoundPage from "../pages/NotFoundPage";
-import ProfilePage from "../pages/ProfilePage";
 import RegisterPage from "../pages/RegisterPage";
-import ReportsPage from "../pages/ReportsPage";
 import ScootersPage from "../pages/ScootersPage";
 import SettingsPage from "../pages/SettingsPage";
-import UsersPage from "../pages/UsersPage";
 
 export function AppRouter() {
   return (
@@ -37,13 +34,10 @@ export function AppRouter() {
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="perfil" element={<ProfilePage />} />
-        <Route path="usuarios" element={<UsersPage />} />
         <Route path="inventario/autos" element={<CarsPage />} />
         <Route path="inventario/motos" element={<MotorcyclesPage />} />
         <Route path="inventario/electrobikes" element={<ElectrobikePage />} />
         <Route path="inventario/scooters" element={<ScootersPage />} />
-        <Route path="reportes" element={<ReportsPage />} />
         <Route path="ia" element={<AiAssistantPage />} />
         <Route path="configuracion" element={<SettingsPage />} />
       </Route>

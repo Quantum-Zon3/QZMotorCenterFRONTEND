@@ -11,6 +11,8 @@ interface Message {
 interface Conversation {
   id: string | number;
   title?: string;
+  created_at?: string;
+  updated_at?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,13 +51,16 @@ export default function AiAssistantPage() {
     setPageError("");
 
     try {
-      const { data } = await aiClient.post<{ response?: string; answer?: string; message?: string }>("/api/v1/chat", {
-        message: prompt,
+      const { data } = await aiClient.post<{
+        conversation_id?: string;
+        response?: string;
+      }>("/api/v1/agent/run", {
         prompt,
+        title: prompt.slice(0, 80),
       });
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: data.response ?? data.answer ?? data.message ?? "Respuesta recibida sin contenido." },
+        { role: "assistant", text: data.response ?? "Respuesta recibida sin contenido." },
       ]);
       await loadConversations();
     } catch (e) {
@@ -96,7 +101,7 @@ export default function AiAssistantPage() {
               <div key={conversation.id} style={{ padding: "0.85rem 1rem", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text-primary)" }}>{getConversationTitle(conversation)}</div>
                 <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
-                  {conversation.updatedAt ?? conversation.createdAt ?? "Sin fecha"}
+                  {conversation.updated_at ?? conversation.updatedAt ?? conversation.created_at ?? conversation.createdAt ?? "Sin fecha"}
                 </div>
               </div>
             ))}

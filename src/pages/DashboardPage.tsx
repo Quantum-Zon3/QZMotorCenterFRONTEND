@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/useAuth";
 import {
-  MdPeople, MdDirectionsCar, MdDirectionsBike,
+  MdDirectionsCar, MdDirectionsBike,
   MdElectricBike, MdElectricScooter, MdBarChart,
   MdSmartToy, MdAdd
 } from "react-icons/md";
@@ -11,7 +11,6 @@ import { getAllReports, type Reporte } from "../features/reports/reports.api";
 import { formatCurrency } from "../lib/formatters";
 
 const baseStats = [
-  { label: "Usuarios", value: "—", icon: <MdPeople />, color: "purple", sub: "Auth · Spring Boot" },
   { label: "Autos", value: "—", icon: <MdDirectionsCar />, color: "teal", sub: "Cars · Node + PostgreSQL" },
   { label: "Motos", value: "—", icon: <MdDirectionsBike />, color: "orange", sub: "Motorcycles · Flask" },
   { label: "Electrobikes", value: "—", icon: <MdElectricBike />, color: "blue", sub: "ElectroBike · Node" },
@@ -20,7 +19,6 @@ const baseStats = [
 ];
 
 const quickActions = [
-  { title: "Usuarios", icon: <MdPeople />, desc: "Gestiona compradores y administradores del sistema.", to: "/app/usuarios", btnLabel: "Ir a Usuarios" },
   { title: "Autos", icon: <MdDirectionsCar />, desc: "Inventario de automóviles. Agrega, edita o elimina registros.", to: "/app/inventario/autos", btnLabel: "Ver Autos" },
   { title: "Motos", icon: <MdDirectionsBike />, desc: "Catálogo de motocicletas con cilindraje y estado.", to: "/app/inventario/motos", btnLabel: "Ver Motos" },
   { title: "Electrobikes", icon: <MdElectricBike />, desc: "Bicicletas eléctricas — autonomía, voltaje y stock.", to: "/app/inventario/electrobikes", btnLabel: "Ver Electrobikes" },
@@ -146,7 +144,7 @@ export default function DashboardPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {reports.slice(0, 5).map((report) => {
-              const eventType = report.status === "cancelled" ? "delete" : "sale";
+              const eventType = report.eventType ?? "sale";
               const eventLabel =
                 eventType === "delete" ? "ELIMINADO" :
                 eventType === "sale" ? "VENTA" :
@@ -170,9 +168,8 @@ export default function DashboardPage() {
                     background: "var(--bg-secondary)", 
                     border: "1px solid var(--border)", 
                     borderRadius: "var(--radius-md)",
-                    cursor: "pointer"
+                    cursor: "default"
                   }}
-                  onClick={() => navigate("/app/reportes")}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
                     <div style={{ 
@@ -218,18 +215,6 @@ export default function DashboardPage() {
                 </div>
               );
             })}
-            
-            {reports.length > 5 && (
-              <div style={{ textAlign: "center", marginTop: "0.5rem" }}>
-                <button 
-                  className="btn btn-secondary btn-sm" 
-                  onClick={() => navigate("/app/reportes")}
-                  style={{ fontSize: "0.75rem" }}
-                >
-                  Ver todos los {reports.length} reportes
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>

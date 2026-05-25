@@ -2,9 +2,9 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/useAuth";
 import {
-  MdDashboard, MdPeople, MdDirectionsCar, MdDirectionsBike,
-  MdElectricBike, MdElectricScooter, MdBarChart, MdSmartToy,
-  MdSettings, MdLogout, MdPerson, MdMenu, MdClose
+  MdDashboard, MdDirectionsCar, MdDirectionsBike,
+  MdElectricBike, MdElectricScooter, MdSmartToy,
+  MdSettings, MdLogout, MdMenu, MdClose
 } from "react-icons/md";
 
 const navSections = [
@@ -12,13 +12,11 @@ const navSections = [
     title: "Principal",
     items: [
       { label: "Dashboard", to: "/app/dashboard", icon: <MdDashboard /> },
-      { label: "Mi Perfil", to: "/app/perfil", icon: <MdPerson /> },
     ],
   },
   {
     title: "Inventario",
     items: [
-      { label: "Usuarios", to: "/app/usuarios", icon: <MdPeople /> },
       { label: "Autos", to: "/app/inventario/autos", icon: <MdDirectionsCar /> },
       { label: "Motos", to: "/app/inventario/motos", icon: <MdDirectionsBike /> },
       { label: "Electrobikes", to: "/app/inventario/electrobikes", icon: <MdElectricBike /> },
@@ -28,7 +26,6 @@ const navSections = [
   {
     title: "Herramientas",
     items: [
-      { label: "Reportes", to: "/app/reportes", icon: <MdBarChart /> },
       { label: "Asistente IA", to: "/app/ia", icon: <MdSmartToy /> },
       { label: "Configuración", to: "/app/configuracion", icon: <MdSettings /> },
     ],

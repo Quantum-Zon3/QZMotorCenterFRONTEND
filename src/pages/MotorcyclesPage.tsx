@@ -8,6 +8,7 @@ import {
   updateMotorcycle, deleteMotorcycle,
 } from "../features/motorcycles/motorcycle.api";
 import type { Motorcycle, CrearMotorcycleInput } from "../features/motorcycles/motorcycle.type";
+import { createReport200OK, createReportDeleted } from "../features/reports/reports.api";
 import { formatCurrency } from "../lib/formatters";
 import { getErrorMessage } from "../lib/http/get-error-message";
 import { env } from "../config/env";
@@ -115,10 +116,24 @@ export default function MotorcyclesPage() {
       if (editTarget) {
         await updateMotorcycle(editTarget.placa, form);
       } else {
-        await createMotorcycle({
+        const created = await createMotorcycle({
           ...form,
           creada_el: form.creada_el || new Date().toISOString(),
         });
+        try {
+          await createReport200OK({
+            items: [{
+              productId: created.placa,
+              productType: "motorcycle",
+              productName: `${created.marca} ${created.modelo}`.trim(),
+              unitPrice: Number(created.precio ?? 0),
+              subtotal: Number(created.precio ?? 0),
+            }],
+            totalAmount: Number(created.precio ?? 0),
+          });
+        } catch (reportErr) {
+          console.error("No se pudo generar reporte de creacion moto:", reportErr);
+        }
       }
       closeModal();
       await loadAll();
@@ -133,6 +148,20 @@ export default function MotorcyclesPage() {
     if (!window.confirm(`¿Eliminar la moto con placa "${moto.placa}"?`)) return;
     try {
       await deleteMotorcycle(moto.placa);
+      try {
+        await createReportDeleted({
+          items: [{
+            productId: moto.placa,
+            productType: "motorcycle",
+            productName: `${moto.marca} ${moto.modelo}`.trim(),
+            unitPrice: Number(moto.precio ?? 0),
+            subtotal: 0,
+          }],
+          totalAmount: 0,
+        });
+      } catch (reportErr) {
+        console.error("No se pudo generar reporte de eliminacion moto:", reportErr);
+      }
       await loadAll();
     } catch (e) {
       alert(getErrorMessage(e, "No se pudo eliminar."));

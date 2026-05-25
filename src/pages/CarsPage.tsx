@@ -13,6 +13,7 @@ import { env } from "../config/env";
 import { useAuth } from "../features/auth/useAuth";
 import { createCar, deleteCar, getCars, updateCar } from "../features/cars/car.api";
 import type { Car, CarFormInput } from "../features/cars/car.type";
+import { createReport200OK, createReportDeleted } from "../features/reports/reports.api";
 import { formatCurrency } from "../lib/formatters";
 import { getErrorMessage } from "../lib/http/get-error-message";
 
@@ -159,7 +160,21 @@ export default function CarsPage() {
       if (editTarget) {
         await updateCar(editTarget.id, form);
       } else {
-        await createCar(form);
+        const created = await createCar(form);
+        try {
+          await createReport200OK({
+            items: [{
+              productId: String(created.id),
+              productType: "car",
+              productName: `${created.brand} ${created.model}`.trim(),
+              unitPrice: Number(created.price ?? 0),
+              subtotal: Number(created.price ?? 0),
+            }],
+            totalAmount: Number(created.price ?? 0),
+          });
+        } catch (reportErr) {
+          console.error("No se pudo generar reporte de creacion auto:", reportErr);
+        }
       }
       closeModal();
       await loadAll();
@@ -175,6 +190,20 @@ export default function CarsPage() {
 
     try {
       await deleteCar(car.id);
+      try {
+        await createReportDeleted({
+          items: [{
+            productId: String(car.id),
+            productType: "car",
+            productName: `${car.brand} ${car.model}`.trim(),
+            unitPrice: Number(car.price ?? 0),
+            subtotal: 0,
+          }],
+          totalAmount: 0,
+        });
+      } catch (reportErr) {
+        console.error("No se pudo generar reporte de eliminacion auto:", reportErr);
+      }
       await loadAll();
     } catch (e) {
       alert(getErrorMessage(e, "No se pudo eliminar el auto."));

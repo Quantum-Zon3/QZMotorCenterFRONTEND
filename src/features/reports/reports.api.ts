@@ -25,7 +25,7 @@ export interface ReporteItem {
   productId: string;
   productType?: string;
   productName: string;
-  quantity: number;
+  quantity?: number;
   unitPrice: number;
   subtotal: number;
   _id?: string;
@@ -35,7 +35,8 @@ export interface Reporte {
   _id: string;
   items: ReporteItem[];
   totalAmount: number;
-  status?: "pending" | "completed" | "cancelled";
+  status?: "pending" | "completed" | "failed";
+  eventType?: "create" | "sale" | "delete" | "other";
   saleDate: string;
   createdAt?: string;
   updatedAt?: string;
@@ -46,11 +47,11 @@ export interface GetReportsResponse {
   data: Reporte[];
 }
 
-type ReportStatus = "pending" | "completed" | "cancelled";
+type ReportEventType = "create" | "sale" | "delete";
 
 const buildSaleReportPayload = (
   data: CrearReporte200OKInput | CrearReporteDeletedInput,
-  status: ReportStatus,
+  eventType: ReportEventType,
 ) => {
   const saleDate = data.saleDate ?? new Date().toISOString();
   const totalAmount =
@@ -58,18 +59,17 @@ const buildSaleReportPayload = (
     data.items.reduce((sum, item) => sum + Number(item.subtotal ?? 0), 0);
 
   return {
-    orderId: `${status}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    customerId: "frontend",
-    customerName: "QZ Motor Center Frontend",
     items: data.items.map((item) => ({
       productId: item.productId,
-      productName: `${item.productType ? `${item.productType} - ` : ""}${item.productName}`,
+      productType: item.productType,
+      productName: item.productName,
       quantity: item.quantity ?? 1,
       unitPrice: item.unitPrice,
       subtotal: item.subtotal,
     })),
     totalAmount,
-    status,
+    status: "completed",
+    eventType,
     saleDate,
   };
 };
@@ -77,26 +77,22 @@ const buildSaleReportPayload = (
 export async function createReport200OK(
   data: CrearReporte200OKInput,
 ): Promise<{ message: string; data: Reporte }> {
-  const payload = buildSaleReportPayload(data, "completed");
-  console.debug("[reports] createReport200OK payload:", payload);
+  const payload = buildSaleReportPayload(data, "create");
   const res = await reportsClient.post<{ message: string; data: Reporte }>(
-    "/api/reports/sale",
+    "/api/reports/200OK",
     payload,
   );
-  console.debug("[reports] createReport200OK response:", res.status, res.data);
   return res.data;
 }
 
 export async function createReportDeleted(
   data: CrearReporteDeletedInput,
 ): Promise<{ message: string; data: Reporte }> {
-  const payload = buildSaleReportPayload(data, "cancelled");
-  console.debug("[reports] createReportDeleted payload:", payload);
+  const payload = buildSaleReportPayload(data, "delete");
   const res = await reportsClient.post<{ message: string; data: Reporte }>(
-    "/api/reports/sale",
+    "/api/reports/deleted",
     payload,
   );
-  console.debug("[reports] createReportDeleted response:", res.status, res.data);
   return res.data;
 }
 
