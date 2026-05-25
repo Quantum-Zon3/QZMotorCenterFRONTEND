@@ -27,6 +27,12 @@ export default function RegisterPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,45}$/.test(form.contraseña)) {
+      setError("La contrasena debe tener entre 8 y 45 caracteres e incluir al menos una letra y un numero.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -131,12 +137,14 @@ export default function RegisterPage() {
             <input
               name="contraseña"
               type="password"
-              placeholder="Contraseña"
+              placeholder="Contrasena con letras y numeros"
               value={form.contraseña}
               onChange={handleChange}
               required
               minLength={8}
               maxLength={45}
+              pattern="^(?=.*[A-Za-z])(?=.*\d).{8,45}$"
+              title="Debe tener entre 8 y 45 caracteres e incluir al menos una letra y un numero."
               autoComplete="new-password"
             />
           </div>

@@ -8,5 +8,7 @@ services:
     envVars:
       - key: VITE_APP_NAME
         value: QZ Motor Center
+      - key: VITE_PUBLIC_SITE_URL
+        value: https://qzmotorcenterfrontend.onrender.com
       - key: VITE_API_GATEWAY_URL
         value: https://qz-gateway.onrender.com
